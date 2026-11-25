@@ -261,3 +261,11 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Linux/WSL single-executable (`build-exe`) bundler check:** `apps/server/src/mcpServers/McpServerTools.ts` dynamically imports `@modelcontextprotocol/sdk` via `loadSdkModule()` so `cli.ts build-exe` does not fail with `ServerCliExecutableImportError` on bare `zod/v3`/`zod/v4` imports.
 - **MCP Tool List Context Budget:** Combining `t3_usage_limits` (`patch/usage-limits`) with `t3_tools_*` and `t3_skills_*` (`patch/tools-and-skills`) increases `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json`. Always verify with `AgentContextBudget.test.ts` on `release`.
 - **Knip unused-entry checks:** Because `patch/dev-custom-ci` removes unused upstream workflows, keep `.github/scripts/mirror-play-apk.cjs`, `resolve-nightly-release.ts`, and `apps/web/scripts/verify-built-boot.ts` listed in `knip.jsonc`.
+
+### Branch Notes: `patch/codex-shadow-home`
+
+- **Purpose:** Prevents Codex multi-account shadow home startup failures (`CodexShadowHomeEntryConflictError`) when Codex/SQLite creates local `*.sqlite`, `*.sqlite-wal`, `*.sqlite-shm`, or `*.sqlite-journal` files (such as `logs_2.sqlite` or `state_5.sqlite-wal`) in the shadow home directory.
+- **Key changes:**
+  - `apps/server/src/provider/Drivers/CodexHomeLayout.ts`: treats `*.sqlite` and its `-wal` / `-shm` / `-journal` sidecars as replaceable shared runtime entries (replacing stale local copies with symlinks to `sharedHomePath`, and gracefully warning/deferring if a file is temporarily locked with `EBUSY`/`EPERM`/`EACCES` on Windows). Real user config files like `config.toml` remain strictly protected.
+  - `apps/server/src/provider/Drivers/CodexHomeLayout.test.ts`: adds regression test for replacing local SQLite DB + WAL/SHM/journal files with shared symlinks.
+- **Rebase notes:** Watch `REPLACEABLE_SHARED_RUNTIME_ENTRIES` and `ensureSymlink` in `CodexHomeLayout.ts` if upstream adds native SQLite sidecar handling.

@@ -194,6 +194,45 @@ it.layer(NodeServices.layer)("CodexHomeLayout", (it) => {
     );
 
     it.effect.skipIf(!symlinksSupported)(
+      "replaces Codex-created local sqlite database and WAL/SHM files with shared links",
+      () =>
+        Effect.gen(function* () {
+          const fileSystem = yield* FileSystem.FileSystem;
+          const path = yield* Path.Path;
+          const sharedHome = yield* makeTempDir("t3code-codex-shared-");
+          const shadowRoot = yield* makeTempDir("t3code-codex-shadow-root-");
+          const shadowHome = path.join(shadowRoot, "shadow");
+          const sqliteEntries = [
+            "logs_2.sqlite",
+            "logs_2.sqlite-wal",
+            "logs_2.sqlite-shm",
+            "state_5.sqlite-wal",
+            "state_5.sqlite-journal",
+          ];
+
+          for (const entry of sqliteEntries) {
+            yield* writeTextFile(path.join(sharedHome, entry), "shared");
+            yield* writeTextFile(path.join(shadowHome, entry), "local");
+          }
+
+          const layout = yield* resolveCodexHomeLayout(
+            decodeCodexSettings({
+              homePath: sharedHome,
+              shadowHomePath: shadowHome,
+            }),
+          );
+
+          yield* materializeCodexShadowHome(layout);
+
+          for (const entry of sqliteEntries) {
+            expect(yield* fileSystem.readLink(path.join(shadowHome, entry))).toBe(
+              path.join(sharedHome, entry),
+            );
+          }
+        }),
+    );
+
+    it.effect.skipIf(!symlinksSupported)(
       "replaces Codex-created local MCP OAuth locks with the shared lock directory",
       () =>
         Effect.gen(function* () {

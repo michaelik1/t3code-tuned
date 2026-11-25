@@ -33,12 +33,29 @@ const KNOWN_SHARED_DIRECTORIES = [
 const PRIVATE_ENTRY_NAMES = new Set(["auth.json", "auth.lock", "models_cache.json"]);
 // Finder maintains metadata separately for each directory, including shadow homes.
 const SHADOW_LOCAL_ENTRY_NAMES = new Set(["log", "memories", "tmp", ".DS_Store"]);
-// Shadow homes may create local runtime locks first; replace them with shared links because they guard shared state.
+// Shadow homes may create local runtime locks or SQLite DB/WAL/SHM files first; replace them with shared links because they belong to shared state.
 const REPLACEABLE_SHARED_RUNTIME_ENTRIES = new Set([
   "mcp-oauth-locks",
   "thread-writer-locks",
   ".sqlite-maintenance.lock",
 ]);
+const SQLITE_RUNTIME_ENTRY_RE = /\.sqlite(?:-(?:wal|shm|journal))?$/i;
+
+function isReplaceableSharedRuntimeEntry(entryName: string): boolean {
+  return (
+    REPLACEABLE_SHARED_RUNTIME_ENTRIES.has(entryName) || SQLITE_RUNTIME_ENTRY_RE.test(entryName)
+  );
+}
+
+function isBusyFileError(error: PlatformError.PlatformError): boolean {
+  const cause = error.reason.cause;
+  return (
+    typeof cause === "object" &&
+    cause !== null &&
+    "code" in cause &&
+    (cause.code === "EBUSY" || cause.code === "EPERM" || cause.code === "EACCES")
+  );
+}
 
 function resolveHomePath(path: Path.Path, home: string, value: string | undefined): string {
   const expanded =
@@ -265,7 +282,7 @@ const ensureSymlink = Effect.fn("CodexHomeLayout.ensureSymlink")(function* (inpu
   );
 
   if (state._tag === "NotSymlink") {
-    if (!REPLACEABLE_SHARED_RUNTIME_ENTRIES.has(input.entryName)) {
+    if (!isReplaceableSharedRuntimeEntry(input.entryName)) {
       return yield* new CodexShadowHomeEntryConflictError({
         sharedHomePath: input.sharedHomePath,
         effectiveHomePath: input.effectiveHomePath,
@@ -299,19 +316,26 @@ const ensureSymlink = Effect.fn("CodexHomeLayout.ensureSymlink")(function* (inpu
       }
     }
 
-    yield* input.fileSystem.remove(link, { recursive: true }).pipe(
+    const removed = yield* input.fileSystem.remove(link, { recursive: true }).pipe(
+      Effect.as(true),
       Effect.catchTags({
         PlatformError: (cause) =>
-          new CodexShadowHomeFileSystemError({
-            sharedHomePath: input.sharedHomePath,
-            effectiveHomePath: input.effectiveHomePath,
-            operation: "remove",
-            path: link,
-            entryName: input.entryName,
-            cause,
-          }),
+          SQLITE_RUNTIME_ENTRY_RE.test(input.entryName) && isBusyFileError(cause)
+            ? Effect.logWarning(
+                "Codex shadow home SQLite runtime file is currently busy; it will be linked on a later setup.",
+                { path: link, entryName: input.entryName },
+              ).pipe(Effect.as(false))
+            : new CodexShadowHomeFileSystemError({
+                sharedHomePath: input.sharedHomePath,
+                effectiveHomePath: input.effectiveHomePath,
+                operation: "remove",
+                path: link,
+                entryName: input.entryName,
+                cause,
+              }),
       }),
     );
+    if (!removed) return;
     return yield* createLink;
   }
 
