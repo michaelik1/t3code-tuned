@@ -261,3 +261,13 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Linux/WSL single-executable (`build-exe`) bundler check:** `apps/server/src/mcpServers/McpServerTools.ts` dynamically imports `@modelcontextprotocol/sdk` via `loadSdkModule()` so `cli.ts build-exe` does not fail with `ServerCliExecutableImportError` on bare `zod/v3`/`zod/v4` imports.
 - **MCP Tool List Context Budget:** Combining `t3_usage_limits` (`patch/usage-limits`) with `t3_tools_*` and `t3_skills_*` (`patch/tools-and-skills`) increases `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json`. Always verify with `AgentContextBudget.test.ts` on `release`.
 - **Knip unused-entry checks:** Because `patch/dev-custom-ci` removes unused upstream workflows, keep `.github/scripts/mirror-play-apk.cjs`, `resolve-nightly-release.ts`, and `apps/web/scripts/verify-built-boot.ts` listed in `knip.jsonc`.
+
+### Branch Notes: `patch/voice-recording-limit`
+
+- **Purpose:** Extends local voice dictation recording and streaming limits from 5 minutes to 1 hour, while keeping external cloud transcription providers (OpenAI / xAI / OpenRouter) at the original 5-minute limit (matching OpenAI's 25 MB upload limit and OpenRouter base64 payload constraints), and displays the active limit next to **Transcribe with** in Voice settings.
+- **Key changes:**
+  - `packages/contracts/src/speech.ts`, `apps/server/src/speech/{SpeechService,CloudSpeech,stream}.ts`: raises local `MAX_SPEECH_BYTES` and WebSocket streaming limit to 1 hour (65-minute socket timeout); adds `CLOUD_MAX_SPEECH_BYTES` (5 minutes) enforced by `CloudSpeech.transcribe`.
+  - `packages/client-runtime/src/voice-input/{controller,environment,stream,index}.ts`: exports `VOICE_RECORDING_LIMIT_SECONDS` (1 hour) and `CLOUD_VOICE_RECORDING_LIMIT_SECONDS` (5 minutes), and supports per-session `recordingLimitSeconds` in `VoiceInputController`.
+  - `apps/web/src/speech/{voiceInputSession,browserPcmCapture,pcmWorklet}.ts`: applies 1-hour limit for local environments and 5-minute limit for cloud providers in both timer and AudioWorklet sample counter.
+  - `apps/web/src/components/settings/VoiceSettingsPanel.tsx`: displays the active recording duration limit in the **Transcribe with** row description.
+- **Rebase notes:** Watch `VOICE_RECORDING_LIMIT_SECONDS`, `MAX_SPEECH_DURATION_SECONDS`, `CLOUD_MAX_SPEECH_BYTES`, and `SPEECH_STREAM_MAX_QUEUED_BYTES` if upstream refactors speech constants.

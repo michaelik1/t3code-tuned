@@ -106,7 +106,7 @@ export const runSpeechSocket = Effect.fn("speech.runSocket")(function* (
   });
   yield* Effect.raceFirst(read, idle).pipe(
     Effect.timeoutOrElse({
-      duration: "10 minutes",
+      duration: "120 minutes",
       // The socket read loop is already interrupted here; its writer can no longer send.
       orElse: () => Effect.void,
     }),

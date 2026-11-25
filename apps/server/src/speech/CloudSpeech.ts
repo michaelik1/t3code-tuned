@@ -25,7 +25,11 @@ import * as ServerSettings from "../serverSettings.ts";
 import { requireSettingsSecret } from "../secrets/settingsSecretValue.ts";
 import { applySpeechAliases, speechRecognitionWords } from "./customWords.ts";
 import { removeSpeechFillerWords } from "./fillerWords.ts";
-import { decodeSpeechPcm, SpeechInvalidAudioError } from "./SpeechService.ts";
+import {
+  CLOUD_MAX_SPEECH_BYTES,
+  decodeSpeechPcm,
+  SpeechInvalidAudioError,
+} from "./SpeechService.ts";
 
 const endpoints = {
   openai: { url: "https://api.openai.com/v1/audio/transcriptions", model: "gpt-transcribe" },
@@ -193,7 +197,7 @@ export const layer = Layer.effect(
         if (provider === "openrouter" && (!model || !isModelId(model)))
           return yield* new CloudSpeechError({ provider, reason: "model-unavailable" });
         const samples = yield* Effect.try({
-          try: () => decodeSpeechPcm(pcm),
+          try: () => decodeSpeechPcm(pcm, CLOUD_MAX_SPEECH_BYTES),
           catch: () =>
             new SpeechInvalidAudioError({
               byteLength: pcm.byteLength,

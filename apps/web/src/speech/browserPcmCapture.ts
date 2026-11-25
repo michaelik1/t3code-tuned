@@ -146,7 +146,7 @@ export function createBrowserPcmCapture(
     },
     record: ({ forDuration }) => {
       // oxlint-disable-next-line unicorn/require-post-message-target-origin -- AudioWorklet MessagePorts do not accept a target origin
-      worklet?.port.postMessage("start");
+      worklet?.port.postMessage({ type: "start", maxSamples: Math.round(forDuration * 16_000) });
       durationTimer = setTimeout(input.onDurationLimit, forDuration * 1_000);
     },
     stop: async () => {

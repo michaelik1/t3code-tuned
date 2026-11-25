@@ -139,6 +139,17 @@ it("decodes a pooled Node Buffer without reading adjacent bytes", () => {
 });
 
 it("rejects empty, misaligned, non-finite, and oversized PCM as invalid audio", () => {
+  expect(SpeechService.MAX_SPEECH_BYTES).toBe(16_000 * 4 * 3_600);
+  expect(SpeechService.CLOUD_MAX_SPEECH_BYTES).toBe(16_000 * 4 * 300);
+  expect(SpeechService.decodeSpeechPcm(new Uint8Array(16_000 * 4 * 301))).toHaveLength(
+    16_000 * 301,
+  );
+  expect(() =>
+    SpeechService.decodeSpeechPcm(
+      new Uint8Array(SpeechService.CLOUD_MAX_SPEECH_BYTES + 4),
+      SpeechService.CLOUD_MAX_SPEECH_BYTES,
+    ),
+  ).toThrow(expect.objectContaining({ _tag: "SpeechInvalidAudioError" }));
   for (const input of [
     new Uint8Array(),
     new Uint8Array(3),

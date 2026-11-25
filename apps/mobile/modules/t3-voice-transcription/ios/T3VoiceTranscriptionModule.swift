@@ -48,7 +48,7 @@ public class T3VoiceTranscriptionModule: Module {
           try check(ExtAudioFileRead(file, &frames, &buffers))
           if frames == 0 { break }
           let count = Int(frames) * 2
-          guard pcm.count + count <= 16_000 * 2 * 301 else { throw CocoaError(.fileReadTooLarge) }
+          guard pcm.count + count <= 16_000 * 2 * 3601 else { throw CocoaError(.fileReadTooLarge) }
           pcm.append(contentsOf: bytes.prefix(count))
         }
       }
