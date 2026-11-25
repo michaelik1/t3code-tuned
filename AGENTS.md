@@ -214,3 +214,109 @@ Architecture and its constraints: `docs/internals/overview.md`. Glossary: `docs/
 
 - Security is important, but should not be over-indexed on, especially for dev mode/maintainer-only features.
 - Before a security audit or triaging a vulnerability report, read [SECURITY.md](SECURITY.md) for the trust model and what is intended.
+
+---
+
+## Fork & Patch Maintenance Playbook (`michaelik1/t3code-tuned`)
+
+This repository is a personal fork of `pingdotgg/t3code` (migrated from `michaelik1/t3code-enhancement-patches`). Upstream `AGENTS.md` above remains the authoritative project map, architecture guide, and safety/style reference; this section documents the fork-specific branch model, release pipeline, and maintenance rules.
+
+### 1. Remotes & Branch Topology
+
+- **Remotes:**
+  - `origin`: `git@github.com:michaelik1/t3code-tuned.git` (this fork)
+  - `upstream`: `https://github.com/pingdotgg/t3code.git` (official T3 Code)
+- **Base branch (`main`):**
+  - Tracks official upstream **stable** release tags (currently `v0.1.11`, commit `59651c1761`) plus a single fork commit appending this playbook to `AGENTS.md`.
+  - Updated only when a new upstream stable release tag ships (e.g. `v0.1.12`).
+- **Upstream PR mirror branches (`upstream-pr/*`):**
+  - `upstream-pr/tools-and-skills`: mirrors `upstream/t3code/skills-installer` (PR `pingdotgg/t3code#17691`) untouched, so new maintainer commits can be fetched and integrated into `patch/tools-and-skills`.
+- **Patch branches (`patch/*`, all branched off `main`):**
+  - **Naming convention:**
+    - `patch/<name>` — feature/behavior patches that change the shipped application code.
+    - `patch/dev-<name>` — development, CI, tooling, or release-infrastructure branches that do not change application runtime code (e.g. `patch/dev-custom-ci`).
+  1. `patch/custom-updater` — `<upstream>-patch.<major>.<minor>` semver ordering, `ElectronUpdater` patch-aware update checks, and forced `latest*.yml` updater manifest emission.
+  2. `patch/usage-limits` — built-in `t3_usage_limits` MCP tool that refreshes and returns provider & hub usage quotas with native T3 presentation.
+  3. `patch/voice-recording-limit` — extends local voice dictation limit from 5 minutes to 1 hour while keeping cloud providers at 5 minutes, and shows the active limit in Voice settings.
+  4. `patch/disable-telemetry` — permanently disables all external/phone-home telemetry (PostHog / `ingest.t3.codes` analytics, owner/provider ID harvesting, and T3 Connect Axiom OTLP relay tracing).
+  5. `patch/codex-shadow-home` — replaces stale local `*.sqlite` / `-wal` / `-shm` / `-journal` runtime files in Codex shadow homes with shared symlinks (and defers gracefully on Windows file locks) so multi-account Codex instances stop failing on startup.
+  6. `patch/tools-and-skills` — adapted port of upstream PR `#17691` (global & project MCP servers, Skill Library, Composer Tool Presets, `t3_tools_*`/`t3_skills_*` MCP tools, UI localization, and bundler/Effect adaptations).
+  7. `patch/dev-custom-ci` — `patch-release.json`, `knip.jsonc` adjustments, and desktop-only GitHub Actions release pipeline (`.github/workflows/release.yml` + `release-desktop.yml`) targeting macOS (`arm64`, `x64`), Windows (`x64`, `arm64` + WSL runtime), and Linux (`x64`, `arm64`). Mobile builds are intentionally excluded.
+- **Integration / release branch (`release`):**
+  - Merge of all `patch/*` branches plus the combined `apps/server/src/provider/agentContextBudget.json` update.
+  - Release builds are triggered from `release` via GitHub Actions `workflow_dispatch`.
+
+### 2. Per-Branch `AGENTS.md` Rule
+
+Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsection at the bottom of `AGENTS.md` summarizing what that branch changes, which files it touches, and any rebase/integration traps. When merging into `release`, keep the main playbook plus a combined summary of the merged branches.
+
+### 3. Versioning, Release Notes & Build Scope
+
+- **Version format:** `v<upstream>-patch.<major>.<minor>` (e.g. `v0.1.11-patch.3.0`), configured in `patch-release.json` on `patch/dev-custom-ci` (`upstream_tag` + `patch_version`).
+  - Keep `patch_version` monotonic across feature generations (do not reset it to `1.0` on an upstream bump).
+- **Release title:** `Patched T3 Code v<upstream>-patch.<major>.<minor>` (e.g. `Patched T3 Code v0.1.11-patch.3.0`).
+- **Release notes file:** `RELEASE_NOTES.md` on `patch/dev-custom-ci` (uses `__UPSTREAM_TAG__` placeholder; `release.yml` reads it automatically so the workflow never needs manual edits for release copy).
+- **Release notes template (English):**
+  ```markdown
+  ## Based on upstream stable [v<upstream>](https://github.com/pingdotgg/t3code/releases/tag/v<upstream>)
+
+  ### Included patches
+  - **<Human-readable patch name>** — <short description>.
+  - **<Human-readable patch name>** — <short description>: <what changed in this release>.
+
+  ### Other changes
+  - <CI, build targets, tooling, docs, or other `patch/dev-*` changes — omit section if none>
+
+  ### Downloads
+  Desktop builds for macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded WSL runtime), and Linux (`x64`, `arm64` AppImage & `.deb`), plus standalone CLI archives (`SHA256SUMS`). Builds are unsigned.
+  ```
+  - List only product patches (`patch/<name>`) under `### Included patches` with human-readable names (no raw branch names). Append `: <changes>` only when that patch changed in the current release.
+  - List non-product changes (`patch/dev-*`, CI, build/packaging, docs) under `### Other changes`; omit the section if there are none.
+- **Platforms built:** Desktop only — macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded Linux WSL runtimes), and Linux (`x64`, `arm64` AppImage/deb + CLI archives). Mobile (iOS/Android), npm CLI publish, AUR, and relay deploys are not built or published in this fork.
+
+### 4. Updating to a New Upstream Stable Release (e.g. `v0.1.12`)
+
+1. **Fetch upstream tag and rebase `main`:**
+   ```powershell
+   git fetch upstream --tags
+   git checkout main
+   git rebase v0.1.12
+   git push origin main --force-with-lease
+   ```
+2. **Rebase each `patch/*` branch onto the new `main`:**
+   ```powershell
+   foreach ($b in @("patch/custom-updater", "patch/usage-limits", "patch/voice-recording-limit", "patch/disable-telemetry", "patch/codex-shadow-home", "patch/tools-and-skills", "patch/dev-custom-ci")) {
+     git checkout $b
+     git rebase main
+     git push origin $b --force-with-lease
+   }
+   ```
+   - On `patch/dev-custom-ci`, update `upstream_tag` (and `patch_version` if needed) in `patch-release.json` and update `RELEASE_NOTES.md`.
+3. **Pull updates from maintainer PRs (if any):**
+   ```powershell
+   git fetch upstream t3code/skills-installer:refs/remotes/upstream/t3code/skills-installer
+   git branch -f upstream-pr/tools-and-skills upstream/t3code/skills-installer
+   git push origin upstream-pr/tools-and-skills --force-with-lease
+   # Inspect new commits and cherry-pick or merge into patch/tools-and-skills, resolving conflicts there.
+   ```
+4. **Rebuild `release`:**
+   ```powershell
+   git checkout -B release main
+   git merge patch/custom-updater patch/usage-limits patch/voice-recording-limit patch/disable-telemetry patch/codex-shadow-home patch/tools-and-skills patch/dev-custom-ci -m "Merge patch/* branches into release (v0.1.12-patch.X.Y)"
+   ```
+   - Resolve `AGENTS.md` (and `packages/client-runtime/src/t3ToolSummary.ts` if both `usage-limits` and `tools-and-skills` touch it).
+   - Update `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json` if `AgentContextBudget.test.ts` reports a new byte count.
+5. **Verify locally and publish:**
+   ```powershell
+   vp test run packages/shared/src/semver.test.ts apps/server/src/mcp/toolkits/orchestrator/usageLimitsPatch.test.ts apps/server/src/provider/AgentContextBudget.test.ts apps/server/src/speech/SpeechService.test.ts apps/server/src/skills/SkillLibrary.test.ts apps/server/src/mcpServers/McpServerTools.test.ts
+   vp run --filter t3 typecheck
+   git push origin release --force-with-lease
+   gh workflow run release.yml --ref release -R michaelik1/t3code-tuned
+   ```
+
+### 5. Key Technical Gotchas
+
+- **Effect `4.1.2+` Crypto / Digest API:** Upstream replaced `effect/Crypto` with `effect/crypto/Digest` and `effect/crypto/SecureRandom`. Keep `SkillLibrary.ts` / tests using `Digest.Digest` and `NodeCrypto.layer`.
+- **Linux/WSL single-executable (`build-exe`) bundler check:** `apps/server/src/mcpServers/McpServerTools.ts` dynamically imports `@modelcontextprotocol/sdk` via `loadSdkModule()` so `cli.ts build-exe` does not fail with `ServerCliExecutableImportError` on bare `zod/v3`/`zod/v4` imports.
+- **MCP Tool List Context Budget:** Combining `t3_usage_limits` (`patch/usage-limits`) with `t3_tools_*` and `t3_skills_*` (`patch/tools-and-skills`) increases `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json`. Always verify with `AgentContextBudget.test.ts` on `release`.
+- **Knip unused-entry checks:** Because `patch/dev-custom-ci` removes unused upstream workflows, keep `.github/scripts/mirror-play-apk.cjs`, `resolve-nightly-release.ts`, and `apps/web/scripts/verify-built-boot.ts` listed in `knip.jsonc`.
