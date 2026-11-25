@@ -1,3 +1,19 @@
+# T3 Code Tuned
+
+> **T3 Code stable, supercharged & private** — a tuned desktop fork of [pingdotgg/t3code](https://github.com/pingdotgg/t3code) built on top of official stable releases.
+
+- **Downloads:** [Latest Release](https://github.com/michaelik1/t3code-tuned/releases/latest) — macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded WSL runtime), and Linux (`x64`, `arm64` AppImage & `.deb`), plus standalone CLI archives. *(Builds are unsigned; mobile apps are not built here.)*
+- **Versioning:** `v<upstream>-patch.<major>.<minor>` with built-in auto-updates pointing to this repository.
+
+### What's tuned
+- **Privacy first** — external telemetry (PostHog / `ingest.t3.codes`, owner ID harvesting, and Axiom relay tracing) is permanently disabled.
+- **Tools & Skills** — Settings → Tools (MCP servers, Skill Library) and Composer Tool Presets.
+- **Usage Limits MCP tool** — `t3_usage_limits` for live provider/hub quota inspection.
+- **1-Hour Local Voice Dictation** — extended local recording limit (cloud providers stay at 5 minutes).
+- **Reliability fixes** — automatic handling of local SQLite/WAL files in Codex multi-account shadow homes.
+
+---
+
 <p align="center">
   <a href="https://t3.codes">
     <img src="./assets/prod/t3-black-web-icon-192x192.png" width="80" height="80" alt="T3 Code logo" />
