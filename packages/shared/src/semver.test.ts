@@ -40,6 +40,19 @@ describe("semver helpers", () => {
     expect(compareSemverVersions("2.1.111-beta.1", "2.1.111")).toBeLessThan(0);
   });
 
+  it("orders post-release -patch.<major>.<minor> versions after their base release and before the next upstream release", () => {
+    expect(compareSemverVersions("0.1.9", "0.1.9-patch.1.0")).toBeLessThan(0);
+    expect(compareSemverVersions("0.1.9-patch.1.0", "0.1.9")).toBeGreaterThan(0);
+    expect(compareSemverVersions("0.1.9-nightly.20260416.1", "0.1.9-patch.1.0")).toBeLessThan(0);
+    expect(compareSemverVersions("0.1.9-patch.1.0", "0.1.9-patch.1.0")).toBe(0);
+    expect(compareSemverVersions("0.1.9-patch.1.0", "0.1.9-patch.1.1")).toBeLessThan(0);
+    expect(compareSemverVersions("0.1.9-patch.1.2", "0.1.9-patch.1.10")).toBeLessThan(0);
+    expect(compareSemverVersions("0.1.9-patch.1.9", "0.1.9-patch.2.0")).toBeLessThan(0);
+    expect(compareSemverVersions("0.1.9-patch.2.0", "0.1.10")).toBeLessThan(0);
+    expect(compareSemverVersions("0.1.9-patch.2.0", "0.1.10-patch.1.0")).toBeLessThan(0);
+    expect(satisfiesSemverRange("0.1.9-patch.1.0", "^0.1.0")).toBe(true);
+  });
+
   it("preserves hyphens within prerelease identifiers", () => {
     expect(normalizeSemverVersion("20-alpha-1")).toBe("20.0.0-alpha-1");
     expect(parseSemver("1.2.3-alpha-1.2")).toEqual({

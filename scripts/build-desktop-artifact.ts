@@ -2862,7 +2862,11 @@ export const createBuildConfig = Effect.fn("createBuildConfig")(function* (
   if (!isDesktopPreviewVersion(version)) {
     const publishConfig = yield* resolveGitHubPublishConfig(updateChannel);
     if (publishConfig) {
-      buildConfig.publish = [publishConfig];
+      buildConfig.publish = [
+        /-patch\.\d+\.\d+$/.test(version) && publishConfig.channel === undefined
+          ? { ...publishConfig, channel: "latest" as const }
+          : publishConfig,
+      ];
     } else if (mockUpdates) {
       buildConfig.publish = [
         {
@@ -3255,6 +3259,9 @@ const countPayloadFiles = Effect.fn("desktopArtifact.countPayloadFiles")(functio
     if (directory === undefined) break;
     const entries = yield* fs.readDirectory(directory);
     for (const entry of entries) {
+      // The native Windows builder prepares a variable number of bytecode cache files.
+      // The file limit checks the actual application payload, as in the upstream Linux cross-build.
+      if (directory === path.join(root, "resources") && entry === "server-compile-cache") continue;
       const entryPath = path.join(directory, entry);
       const stat = yield* fs.stat(entryPath);
       if (stat.type === "Directory") {
@@ -3576,6 +3583,15 @@ export const validateWindowsPackagedPayload = Effect.fn(
   }
 
   const fileCount = yield* countPayloadFiles(packagedAppDir);
+  const compileCachePath = path.join(resourcesDir, "server-compile-cache");
+  if (yield* fs.exists(compileCachePath).pipe(Effect.orElseSucceed(() => false))) {
+    const cacheFileCount = yield* countPayloadFiles(compileCachePath);
+    if (cacheFileCount > 64) {
+      return yield* new WindowsPackagedPayloadValidationError({
+        reason: "file-limit-exceeded", packagedAppDir, fileCount: cacheFileCount, fileLimit: 64,
+      });
+    }
+  }
   if (fileCount > fileLimit) {
     return yield* new WindowsPackagedPayloadValidationError({
       reason: "file-limit-exceeded",

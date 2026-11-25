@@ -1418,6 +1418,50 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
     ),
   );
 
+  it.effect("bounds the Windows compile cache independently of the application payload", () =>
+    Effect.scoped(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const fixture = yield* makeWindowsPayloadFixture({ copyUnpackedNatives: true });
+        const cache = path.join(fixture.packagedAppDir, "resources", "server-compile-cache");
+        yield* fs.makeDirectory(cache, { recursive: true });
+        for (let i = 0; i < 65; i++) yield* fs.writeFileString(path.join(cache, String(i)), "cache");
+        const error = yield* validateWindowsPackagedPayload({
+          stageDistDir: fixture.stageDistDir, appExecutableName: fixture.appExecutableName,
+          targetArch: "x64", appVersion: WINDOWS_PAYLOAD_FIXTURE_VERSION,
+        }).pipe(Effect.flip);
+        assert.equal(error.reason, "file-limit-exceeded");
+        assert.equal(error.fileLimit, 64);
+        assert.equal(error.fileCount, 65);
+        const patchedConfig = yield* createBuildConfig(
+          "win",
+          "nsis",
+          "0.1.9-patch.1.0",
+          false,
+          false,
+          undefined,
+          undefined,
+        ).pipe(
+          Effect.provide(
+            ConfigProvider.layer(
+              ConfigProvider.fromEnv({ env: { GITHUB_REPOSITORY: "s1lent95/t3code_with_usage" } }),
+            ),
+          ),
+        );
+        assert.deepStrictEqual(patchedConfig.publish, [
+          {
+            provider: "github",
+            owner: "s1lent95",
+            repo: "t3code_with_usage",
+            releaseType: "release",
+            channel: "latest",
+          },
+        ]);
+      }),
+    ),
+  );
+
   it.effect("rejects a sidecar whose extracted server bundle cannot resolve", () =>
     Effect.scoped(
       Effect.gen(function* () {

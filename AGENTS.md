@@ -261,3 +261,12 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Linux/WSL single-executable (`build-exe`) bundler check:** `apps/server/src/mcpServers/McpServerTools.ts` dynamically imports `@modelcontextprotocol/sdk` via `loadSdkModule()` so `cli.ts build-exe` does not fail with `ServerCliExecutableImportError` on bare `zod/v3`/`zod/v4` imports.
 - **MCP Tool List Context Budget:** Combining `t3_usage_limits` (`patch/usage-limits`) with `t3_tools_*` and `t3_skills_*` (`patch/tools-and-skills`) increases `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json`. Always verify with `AgentContextBudget.test.ts` on `release`.
 - **Knip unused-entry checks:** Because `patch/dev-custom-ci` removes unused upstream workflows, keep `.github/scripts/mirror-play-apk.cjs`, `resolve-nightly-release.ts`, and `apps/web/scripts/verify-built-boot.ts` listed in `knip.jsonc`.
+
+### Branch Notes: `patch/custom-updater`
+
+- **Purpose:** Enables `<upstream>-patch.<major>.<minor>` release versioning (e.g. `0.1.11-patch.3.0`) and automatic updates from `michaelik1/t3code-tuned` GitHub Releases.
+- **Key changes:**
+  - `packages/shared/src/semver.ts` & `semver.test.ts`: parses and orders `-patch.<major>.<minor>` versions above the base upstream version (`0.1.11 < 0.1.11-patch.1.0 < 0.1.11-patch.3.0 < 0.1.12-patch.1.0`).
+  - `apps/desktop/src/electron/ElectronUpdater.ts`: overrides `autoUpdater.isUpdateAvailable` using `compareSemverVersions` so Electron's updater accepts patched releases instead of treating `-patch.*` as a lower prerelease.
+  - `scripts/build-desktop-artifact.ts` & `build-desktop-artifact.test.ts`: sets `channel: "latest"` on GitHub publish config for `-patch.*` builds so `electron-builder` emits `latest*.yml` manifests, and bounds `resources/server-compile-cache` separately (64 files) from the 80-file Windows payload limit.
+- **Rebase notes:** Watch `createBuildConfig` and `validateWindowsPackagedPayload` in `scripts/build-desktop-artifact.ts` if upstream changes updater channels or payload checks.
