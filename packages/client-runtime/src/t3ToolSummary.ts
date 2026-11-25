@@ -1818,6 +1818,13 @@ export function summarizeT3ToolCalls(
       }
       break;
     }
+    case "tools-read":
+    case "tools-update":
+    case "skills-install":
+    case "skills-remove": {
+      label = resolve(msg("Managed tools and skills"));
+      break;
+    }
     case "review-pr": {
       const count = selected.length;
       label = done

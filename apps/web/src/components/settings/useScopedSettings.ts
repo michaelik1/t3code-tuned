@@ -13,6 +13,7 @@ import {
   type EnvironmentId,
   type ProjectScopedServerSettingKey,
   type ServerSettings,
+  type ServerSettingsPatch,
   type UnifiedSettings,
 } from "@t3tools/contracts";
 
@@ -27,6 +28,7 @@ import { useOptionalSettingsScope, useSettingsScope } from "./SettingsScopeConte
 import {
   createScopedSettingsWriter,
   pendingScopedWritesAtom,
+  planEnvironmentsSettingsPatch,
   planProjectOverridesClear,
   planScopedSettingsClear,
   planScopedSettingsPatch,
@@ -93,9 +95,10 @@ function useRunScopedPlan() {
       environments,
       planner,
       async (request) => {
-        const missing = requiredScopesForServerSettingsPatch(request.input.patch).find(
-          (scope) => !readEnvironmentScope(request.environmentId, scope),
-        );
+        const missing = requiredScopesForServerSettingsPatch(
+          request.input.patch,
+          readSettings(request.environmentId) ?? undefined,
+        ).find((scope) => !readEnvironmentScope(request.environmentId, scope));
         const result = missing
           ? AsyncResult.failure(
               Cause.fail(
@@ -160,6 +163,15 @@ export function useClearScopedSettings() {
     if (context === null) return;
     run(context.environments, (current) => planScopedSettingsClear(context.scope, current, keys));
   };
+}
+
+/** Saves one environment-wide patch on each environment given, outside the settings scope. */
+export function useUpdateEnvironmentsSettings() {
+  const run = useRunScopedPlan();
+  return (
+    environments: Parameters<typeof planEnvironmentsSettingsPatch>[0],
+    patch: ServerSettingsPatch,
+  ) => run(environments, (current) => planEnvironmentsSettingsPatch(current, patch));
 }
 
 export function useClearProjectOverrides() {

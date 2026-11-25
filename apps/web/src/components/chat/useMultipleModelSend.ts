@@ -6,6 +6,7 @@ import {
   type ModelSelection,
   type RuntimeMode,
   type ThreadId,
+  type ThreadToolPresets,
 } from "@t3tools/contracts";
 import { scopeThreadRef } from "@t3tools/client-runtime/environment";
 import { settlePromise, squashAtomCommandFailure } from "@t3tools/client-runtime/state/runtime";
@@ -56,6 +57,7 @@ interface MultipleModelSendInput {
   readonly runtimeMode: RuntimeMode;
   readonly startFromOrigin: boolean;
   readonly worktreeRepositories: ReadonlyArray<{ readonly path: string }> | undefined;
+  readonly toolPresets: ThreadToolPresets | undefined;
   readonly resetLocalDispatch: ReturnType<typeof useLocalDispatchState>["resetLocalDispatch"];
   readonly setThreadError: ReturnType<typeof makeThreadErrorSetter>;
 }
@@ -77,6 +79,7 @@ export function useMultipleModelSend(input: MultipleModelSendInput) {
     runtimeMode,
     startFromOrigin,
     worktreeRepositories,
+    toolPresets,
     resetLocalDispatch,
     setThreadError,
   } = input;
@@ -193,6 +196,7 @@ export function useMultipleModelSend(input: MultipleModelSendInput) {
                       modelSelection: target.selection,
                       runtimeMode,
                       interactionMode: DEFAULT_INTERACTION_MODE,
+                      ...(toolPresets ? { toolPresets } : {}),
                       branch,
                       worktreePath: null,
                       createdAt: createdAt,

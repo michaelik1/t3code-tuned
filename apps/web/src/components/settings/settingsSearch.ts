@@ -28,6 +28,7 @@ export type SettingsPath =
   | "/settings/keybindings"
   | "/settings/snap-shot"
   | "/settings/providers"
+  | "/settings/tools"
   | "/settings/threads"
   | "/settings/browser"
   | "/settings/devices"
@@ -106,6 +107,7 @@ export const SETTINGS_SECTION_LABELS: Readonly<Record<SettingsPath, string>> = {
   "/settings/keybindings": msg("Keybindings"),
   "/settings/snap-shot": msg("SnapShots"),
   "/settings/providers": msg("Providers"),
+  "/settings/tools": msg("Tools"),
   "/settings/threads": msg("Threads"),
   "/settings/browser": msg("Browser"),
   "/settings/devices": msg("Devices"),
@@ -156,6 +158,7 @@ const ALL_SETTINGS_NAV_GROUPS: ReadonlyArray<SettingsNavGroup> = [
     heading: msg("Agents"),
     paths: [
       "/settings/providers",
+      "/settings/tools",
       "/settings/threads",
       "/settings/browser",
       "/settings/devices",
@@ -1131,6 +1134,24 @@ export const SETTINGS_SEARCH_ITEMS = [
     to: "/settings/scheduled-tasks",
   },
   {
+    id: "tools-skills",
+    title: msg("Skills"),
+    to: "/settings/tools",
+    scope: "project-defaults",
+    searchTerms: [
+      "agent skills SKILL.md disable enable hide turn off slash commands .agents claude codex cursor install add npx skills github repo update remove scripts conflict presets",
+    ],
+  },
+  {
+    id: "tools-mcp-servers",
+    title: msg("MCP servers"),
+    to: "/settings/tools",
+    scope: "project-defaults",
+    searchTerms: [
+      "model context protocol mcp add server command url stdio http headers env tools agents",
+    ],
+  },
+  {
     id: "agent-browser-access",
     title: msg("Agent browser access"),
     to: "/settings/browser",
@@ -1542,6 +1563,7 @@ const SETTINGS_CATEGORY_SCOPES: Readonly<Record<SettingsPath, SettingsSearchScop
   "/settings/snap-shot": null,
   "/settings/keybindings": null,
   "/settings/providers": null,
+  "/settings/tools": null,
   "/settings/threads": null,
   "/settings/browser": null,
   "/settings/devices": null,

@@ -37,6 +37,7 @@ import {
   defaultInstanceIdForDriver,
   isOrchestrationV2WorkActive,
   type OrchestrationV2GoalCommand,
+  mcpServerVariableRecord,
   OrchestrationV2ProviderGoal,
   parseGoalCommand,
   ProviderDriverKind,
@@ -86,6 +87,7 @@ import type {
   ProviderThreadId,
   ProviderTurnId,
   ProviderInstanceId,
+  ResolvedMcpServer,
   RuntimeMode,
 } from "@t3tools/contracts";
 import * as CodexClient from "effect-codex-app-server/client";
@@ -1726,6 +1728,7 @@ function codexThreadRuntimeParams(input: {
           tool_timeout_sec: CODEX_T3_MCP_TOOL_TIMEOUT_SEC,
           http_headers: { Authorization: mcpSession.authorizationHeader },
         };
+  const tools = mcpSession?.tools ?? McpProviderSession.EMPTY_MCP_PROVIDER_SESSION_TOOLS;
   return {
     ...(input.runtimePolicy?.cwd == null ? {} : { cwd: input.runtimePolicy.cwd }),
     ...(input.modelSelection === undefined ? {} : { model: input.modelSelection.model }),
@@ -1747,7 +1750,9 @@ function codexThreadRuntimeParams(input: {
       ...(t3Server === undefined
         ? {}
         : {
-            // Override only T3's servers so launch-argument MCP servers survive.
+            // Override only T3's servers so launch-argument MCP servers survive;
+            // Settings → Tools servers go in the same way, one key each.
+            ...codexUserMcpServers(tools.servers),
             [`mcp_servers.${CODEX_T3_MCP_SERVER}`]: {
               ...t3Server,
               disabled_tools: CODEX_DIRECT_ONLY_T3_TOOLS,
@@ -1760,8 +1765,38 @@ function codexThreadRuntimeParams(input: {
               omit_tools_from: ["code_mode", "deferred"],
             },
           }),
+      // Thread config is Codex's session-flags layer, which its skill rules
+      // read alongside the user's config.toml; a later name rule wins.
+      ...(tools.disabledSkills.length === 0
+        ? {}
+        : {
+            skills: {
+              config: tools.disabledSkills.map((name) => ({ name, enabled: false })),
+            },
+          }),
     },
   };
+}
+
+/** Settings → Tools servers as `mcp_servers.<name>` keys, which leave other servers alone. */
+function codexUserMcpServers(
+  servers: ReadonlyArray<ResolvedMcpServer>,
+): Record<string, Schema.Json> {
+  return Object.fromEntries(
+    servers.map((server) => [
+      `mcp_servers.${server.name}`,
+      server.transport.type === "stdio"
+        ? {
+            command: server.transport.command,
+            args: [...server.transport.args],
+            env: mcpServerVariableRecord(server.transport.env),
+          }
+        : {
+            url: server.transport.url,
+            http_headers: mcpServerVariableRecord(server.transport.headers),
+          },
+    ]),
+  );
 }
 
 const decodeCodexResumeMetadata = Schema.decodeUnknownEffect(

@@ -36,6 +36,10 @@ export async function runCliCommand() {
       import("@t3tools/provider-cursor/server/worker"),
     ]);
     await runCursorSdkWorker(NodeServices.layer);
+  } else if (command === "skills-cli") {
+    // Option parsing belongs to the skills CLI, so it skips the T3 CLI entirely.
+    const { runSkillsCli } = await import("./cli/skillsCli.ts");
+    await runSkillsCli(process.argv.slice(3));
   } else {
     enableCliCompileCache();
     // Windows desktop launches without stdin; attach before reading, except on fast paths using pipes.

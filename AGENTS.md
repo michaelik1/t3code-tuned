@@ -261,3 +261,15 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Linux/WSL single-executable (`build-exe`) bundler check:** `apps/server/src/mcpServers/McpServerTools.ts` dynamically imports `@modelcontextprotocol/sdk` via `loadSdkModule()` so `cli.ts build-exe` does not fail with `ServerCliExecutableImportError` on bare `zod/v3`/`zod/v4` imports.
 - **MCP Tool List Context Budget:** Combining `t3_usage_limits` (`patch/usage-limits`) with `t3_tools_*` and `t3_skills_*` (`patch/tools-and-skills`) increases `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json`. Always verify with `AgentContextBudget.test.ts` on `release`.
 - **Knip unused-entry checks:** Because `patch/dev-custom-ci` removes unused upstream workflows, keep `.github/scripts/mirror-play-apk.cjs`, `resolve-nightly-release.ts`, and `apps/web/scripts/verify-built-boot.ts` listed in `knip.jsonc`.
+
+### Branch Notes: `patch/tools-and-skills`
+
+- **Purpose:** Adapted port of upstream maintainer PR `pingdotgg/t3code#17691` (`upstream-pr/tools-and-skills` -> `upstream/t3code/skills-installer`), adding Settings -> Tools (global & project MCP servers and Skill Library), Composer Tool Presets, and the `t3_tools_read`, `t3_tools_update`, `t3_skills_install`, and `t3_skills_remove` MCP tools.
+- **Key changes:**
+  - Server: `apps/server/src/skills/`, `apps/server/src/mcpServers/`, `apps/server/src/mcp/toolkits/tools/`, `apps/server/src/mcp/resolveAgentTools.ts`, `apps/server/src/mcpServerSecrets.ts`, `apps/server/src/cli/skillsCli.ts`, plus wiring in `server.ts`, `ws.ts`, `RpcAuthorization.ts`, `McpHttpServer.ts`, and provider adapters.
+  - Web UI: `apps/web/src/routes/_chat.settings.tools.tsx`, `apps/web/src/components/settings/{ToolsSettings,SkillList,SkillDetail,SkillFiles,SkillAgents,SkillEnvironments,AddSkillsDialog,McpServerDetail,McpServerDialog}.tsx`, `apps/web/src/components/chat/{ComposerToolPresets,ToolPresetDialog}.tsx`, including i18n localization fixes.
+  - Contracts & Shared: `packages/contracts/src/{agentTools,skills}.ts`, `packages/shared/src/agentTools.ts`, `packages/provider-core/src/server/AgentSkillFolders.ts`, `t3McpToolPresentation.ts`, `t3ToolSummary.ts`.
+- **Fork adaptations to preserve when pulling from `upstream-pr/tools-and-skills`:**
+  - Effect `4.1.2+` uses `effect/crypto/Digest` (`Digest.Digest`) and `NodeCrypto.layer` instead of removed `effect/Crypto`.
+  - `apps/server/src/mcpServers/McpServerTools.ts` dynamically loads `@modelcontextprotocol/sdk` so `cli.ts build-exe` does not fail with `ServerCliExecutableImportError` on bare `zod/v3`/`zod/v4` imports.
+  - Keep localized strings in the Settings -> Tools and Composer Tool Presets components.
