@@ -261,3 +261,12 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Linux/WSL single-executable (`build-exe`) bundler check:** `apps/server/src/mcpServers/McpServerTools.ts` dynamically imports `@modelcontextprotocol/sdk` via `loadSdkModule()` so `cli.ts build-exe` does not fail with `ServerCliExecutableImportError` on bare `zod/v3`/`zod/v4` imports.
 - **MCP Tool List Context Budget:** Combining `t3_usage_limits` (`patch/usage-limits`) with `t3_tools_*` and `t3_skills_*` (`patch/tools-and-skills`) increases `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json`. Always verify with `AgentContextBudget.test.ts` on `release`.
 - **Knip unused-entry checks:** Because `patch/dev-custom-ci` removes unused upstream workflows, keep `.github/scripts/mirror-play-apk.cjs`, `resolve-nightly-release.ts`, and `apps/web/scripts/verify-built-boot.ts` listed in `knip.jsonc`.
+
+### Branch Notes: `patch/usage-limits`
+
+- **Purpose:** Adds the built-in `t3_usage_limits` MCP tool so agents can refresh and inspect T3 subscription quota snapshots across provider instances and usage hubs.
+- **Key changes:**
+  - `apps/server/src/mcp/toolkits/orchestrator/tools.ts` & `handlers.ts`: registers `t3_usage_limits` and actively refreshes provider/hub usage limits on call.
+  - `apps/server/src/mcp/toolkits/orchestrator/usageLimitsPatch.test.ts`: unit test covering `t3_usage_limits`.
+  - `packages/shared/src/t3McpToolPresentation.ts` & `packages/client-runtime/src/t3ToolSummary.ts`: adds native T3 icon, action label, and summary string for `usage-limits`.
+- **Rebase / merge notes:** When merging with `patch/tools-and-skills` into `release`, keep both `usage-limits` and `tools-*`/`skills-*` cases in `t3McpToolPresentation.ts` and `t3ToolSummary.ts`, and update `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json`.

@@ -1818,6 +1818,10 @@ export function summarizeT3ToolCalls(
       }
       break;
     }
+    case "usage-limits": {
+      label = resolve(msg("Checked usage limits"));
+      break;
+    }
     case "review-pr": {
       const count = selected.length;
       label = done
