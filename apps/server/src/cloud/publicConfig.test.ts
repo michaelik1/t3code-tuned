@@ -68,6 +68,10 @@ it("product opt-out disables relay tracing with either built-in or runtime crede
 
   assert.equal(resolveRelayClientTracingConfig(env, fallback), null);
   assert.equal(
+    resolveRelayClientTracingConfig({ T3CODE_TELEMETRY_ENABLED: "true" }, fallback),
+    null,
+  );
+  assert.equal(
     resolveRelayClientTracingConfig(
       {
         ...env,

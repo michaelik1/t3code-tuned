@@ -261,3 +261,12 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Linux/WSL single-executable (`build-exe`) bundler check:** `apps/server/src/mcpServers/McpServerTools.ts` dynamically imports `@modelcontextprotocol/sdk` via `loadSdkModule()` so `cli.ts build-exe` does not fail with `ServerCliExecutableImportError` on bare `zod/v3`/`zod/v4` imports.
 - **MCP Tool List Context Budget:** Combining `t3_usage_limits` (`patch/usage-limits`) with `t3_tools_*` and `t3_skills_*` (`patch/tools-and-skills`) increases `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json`. Always verify with `AgentContextBudget.test.ts` on `release`.
 - **Knip unused-entry checks:** Because `patch/dev-custom-ci` removes unused upstream workflows, keep `.github/scripts/mirror-play-apk.cjs`, `resolve-nightly-release.ts`, and `apps/web/scripts/verify-built-boot.ts` listed in `knip.jsonc`.
+
+### Branch Notes: `patch/disable-telemetry`
+
+- **Purpose:** Permanently disables all external/phone-home telemetry (PostHog / `https://ingest.t3.codes` analytics, provider/owner identity harvesting, and T3 Connect Axiom OTLP relay tracing), regardless of environment variables or build flags.
+- **Key changes:**
+  - `apps/server/src/telemetry/AnalyticsService.ts` & `AnalyticsService.test.ts`: replaces PostHog batching, hardcoded API key, identity lookup, and background flush fibers with a pure no-op service.
+  - `apps/server/src/serverRuntimeStartup.ts`: short-circuits `recordStartupHeartbeat` to `Effect.void` so startup does not read `~/.codex/auth.json`, `~/.claude.json`, or `CLOUD_LINKED_USER_ID` for telemetry owners.
+  - `packages/shared/src/otelEnvironment.ts`, `packages/shared/src/relayTracing.ts`, `apps/server/src/cloud/{publicConfig,relayTracing}.ts`, `apps/web/src/cloud/publicConfig.ts`, `apps/desktop/src/ipc/methods/window.ts` (and matching tests): unconditionally disables relay client tracing (`isRelayTracingEnabled = false`, `RelayTracing.layer = Option.none()`, `resolveRelayClientTracingConfig = null`, `relayTelemetryEnabled = false`).
+- **What stays intact:** Local on-disk diagnostic logs (`server.trace.ndjson`, `desktop.trace.ndjson`), internal Electron-to-server IPC (`DesktopTelemetryPublisher` for power/update state), and user-configured OTLP export in Settings → Diagnostics (off by default).
