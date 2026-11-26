@@ -1,7 +1,8 @@
-## Based on upstream stable [__UPSTREAM_TAG__](https://github.com/pingdotgg/t3code/releases/tag/__UPSTREAM_TAG__)
+## Based on upstream stable [**UPSTREAM_TAG**](https://github.com/pingdotgg/t3code/releases/tag/__UPSTREAM_TAG__)
 
 ### Included patches
-- **Custom Updater** — supports `<upstream>-patch.<major>.<minor>` versioning and auto-updates from this fork.
+
+- **Custom Updater** — supports `<upstream>-patch.<major>.<minor>` versioning and auto-updates from this fork: point CLI/SSH archive downloads, `t3 update`, startup recovery links, and install scripts to `michaelik1/t3code-tuned`.
 - **Usage Limits MCP Tool** — adds `t3_usage_limits` with live provider/hub quota refresh and native UI presentation.
 - **1-Hour Local Voice Dictation** — raises local voice recording limit from 5 minutes to 1 hour (cloud providers remain at 5 minutes) and shows the active limit in Voice settings.
 - **Telemetry Disabled** — permanently disables PostHog (`ingest.t3.codes`) analytics, owner/provider ID harvesting, and T3 Connect Axiom relay tracing.
@@ -9,7 +10,9 @@
 - **Tools & Skills** — Settings → Tools (MCP servers, Skill Library) and Composer Tool Presets (port of upstream PR #17691) with UI localization and `build-exe` bundling fixes.
 
 ### Other changes
+
 - Desktop-only GitHub Actions release pipeline for macOS, Windows (+ WSL runtime), and Linux (`x64` & `arm64`); mobile builds excluded.
 
 ### Downloads
+
 Desktop builds for macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded WSL runtime), and Linux (`x64`, `arm64` AppImage & `.deb`), plus standalone CLI archives (`SHA256SUMS`). Builds are unsigned.

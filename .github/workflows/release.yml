@@ -97,7 +97,7 @@ jobs:
 
       - name: Verify patch tests
         run: |
-          (cd packages/shared && vp test run src/semver.test.ts src/otelEnvironment.test.ts)
+          (cd packages/shared && vp test run src/semver.test.ts src/cliRelease.test.ts src/otelEnvironment.test.ts)
           (cd apps/server && vp test run src/skills/SkillLibrary.test.ts src/mcpServers/McpServerTools.test.ts src/speech/SpeechService.test.ts src/mcp/toolkits/orchestrator/usageLimitsPatch.test.ts src/provider/AgentContextBudget.test.ts src/telemetry/AnalyticsService.test.ts src/cloud/publicConfig.test.ts src/cloud/relayTracing.test.ts src/provider/Drivers/CodexHomeLayout.test.ts)
           (cd packages/client-runtime && vp test run src/voice-input/stream.test.ts)
 
