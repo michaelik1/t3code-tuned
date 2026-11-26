@@ -357,6 +357,6 @@ jobs:
             gh release upload "$TAG" "${assets[@]}" --repo "$REPO" --clobber
             gh release edit "$TAG" --repo "$REPO" --draft=false --latest
           else
-            sed "s/__UPSTREAM_TAG__/${UPSTREAM_TAG}/g" RELEASE_NOTES.md > "$RUNNER_TEMP/release-notes.md"
+            sed "s/{{UPSTREAM_TAG}}/${UPSTREAM_TAG}/g" RELEASE_NOTES.md > "$RUNNER_TEMP/release-notes.md"
             gh release create "$TAG" "${assets[@]}" --repo "$REPO" --title "Patched T3 Code $TAG" --notes-file "$RUNNER_TEMP/release-notes.md" --latest
           fi

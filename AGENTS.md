@@ -196,19 +196,22 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Version format:** `v<upstream>-patch.<major>.<minor>` (e.g. `v0.1.11-patch.3.0`), configured in `patch-release.json` on `patch/dev-custom-ci` (`upstream_tag` + `patch_version`).
   - Keep `patch_version` monotonic across feature generations (do not reset it to `1.0` on an upstream bump).
 - **Release title:** `Patched T3 Code v<upstream>-patch.<major>.<minor>` (e.g. `Patched T3 Code v0.1.11-patch.3.0`).
-- **Release notes file:** `RELEASE_NOTES.md` on `patch/dev-custom-ci` (uses `__UPSTREAM_TAG__` placeholder; `release.yml` reads it automatically so the workflow never needs manual edits for release copy).
+- **Release notes file:** `RELEASE_NOTES.md` on `patch/dev-custom-ci` (uses `{{UPSTREAM_TAG}}` placeholder; `release.yml` reads it automatically so the workflow never needs manual edits for release copy).
 - **Release notes template (English):**
   ```markdown
   ## Based on upstream stable [v<upstream>](https://github.com/pingdotgg/t3code/releases/tag/v<upstream>)
 
   ### Included patches
+
   - **<Human-readable patch name>** — <short description>.
   - **<Human-readable patch name>** — <short description>: <what changed in this release>.
 
   ### Other changes
+
   - <CI, build targets, tooling, docs, or other `patch/dev-*` changes — omit section if none>
 
   ### Downloads
+
   Desktop builds for macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded WSL runtime), and Linux (`x64`, `arm64` AppImage & `.deb`), plus standalone CLI archives (`SHA256SUMS`). Builds are unsigned.
   ```
   - List only product patches (`patch/<name>`) under `### Included patches` with human-readable names (no raw branch names). Append `: <changes>` only when that patch changed in the current release.
