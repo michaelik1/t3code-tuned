@@ -202,13 +202,16 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
   ## Based on upstream stable [v<upstream>](https://github.com/pingdotgg/t3code/releases/tag/v<upstream>)
 
   ### Included patches
+
   - **<Human-readable patch name>** — <short description>.
   - **<Human-readable patch name>** — <short description>: <what changed in this release>.
 
   ### Other changes
+
   - <CI, build targets, tooling, docs, or other `patch/dev-*` changes — omit section if none>
 
   ### Downloads
+
   Desktop builds for macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded WSL runtime), and Linux (`x64`, `arm64` AppImage & `.deb`), plus standalone CLI archives (`SHA256SUMS`). Builds are unsigned.
   ```
   - List only product patches (`patch/<name>`) under `### Included patches` with human-readable names (no raw branch names). Append `: <changes>` only when that patch changed in the current release.
@@ -264,8 +267,8 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 
 ### Branch Notes: `patch/codex-shadow-home`
 
-- **Purpose:** Prevents Codex multi-account shadow home startup failures (`CodexShadowHomeEntryConflictError`) when Codex/SQLite creates local `*.sqlite`, `*.sqlite-wal`, `*.sqlite-shm`, or `*.sqlite-journal` files (such as `logs_2.sqlite` or `state_5.sqlite-wal`) in the shadow home directory.
+- **Purpose:** Prevents Codex multi-account shadow home startup failures (`CodexShadowHomeEntryConflictError`) when Codex/SQLite creates or atomically rewrites local `*.sqlite*`, `config.toml`, `version.json`, or `project-metadata-locks` entries in the shadow home directory.
 - **Key changes:**
-  - `apps/server/src/provider/Drivers/CodexHomeLayout.ts`: treats `*.sqlite` and its `-wal` / `-shm` / `-journal` sidecars as replaceable shared runtime entries (replacing stale local copies with symlinks to `sharedHomePath`, and gracefully warning/deferring if a file is temporarily locked with `EBUSY`/`EPERM`/`EACCES` on Windows). Real user config files like `config.toml` remain strictly protected.
-  - `apps/server/src/provider/Drivers/CodexHomeLayout.test.ts`: adds regression test for replacing local SQLite DB + WAL/SHM/journal files with shared symlinks.
+  - `apps/server/src/provider/Drivers/CodexHomeLayout.ts`: treats `*.sqlite` (`-wal` / `-shm` / `-journal`), `config.toml`, `version.json`, and `project-metadata-locks` as replaceable shared entries (replacing stale local copies with symlinks to `sharedHomePath`, and gracefully warning/deferring if a file is temporarily locked with `EBUSY`/`EPERM`/`EACCES` on Windows). Other unknown local files remain strictly protected.
+  - `apps/server/src/provider/Drivers/CodexHomeLayout.test.ts`: covers replacing local SQLite DB + WAL/SHM/journal, `config.toml`, and `version.json` with shared symlinks while rejecting unknown non-symlink files.
 - **Rebase notes:** Watch `REPLACEABLE_SHARED_RUNTIME_ENTRIES` and `ensureSymlink` in `CodexHomeLayout.ts` if upstream adds native SQLite sidecar handling.

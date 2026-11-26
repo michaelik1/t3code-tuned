@@ -194,7 +194,7 @@ it.layer(NodeServices.layer)("CodexHomeLayout", (it) => {
     );
 
     it.effect.skipIf(!symlinksSupported)(
-      "replaces Codex-created local sqlite database and WAL/SHM files with shared links",
+      "replaces Codex-created local sqlite database, WAL/SHM, and config.toml files with shared links",
       () =>
         Effect.gen(function* () {
           const fileSystem = yield* FileSystem.FileSystem;
@@ -202,15 +202,17 @@ it.layer(NodeServices.layer)("CodexHomeLayout", (it) => {
           const sharedHome = yield* makeTempDir("t3code-codex-shared-");
           const shadowRoot = yield* makeTempDir("t3code-codex-shadow-root-");
           const shadowHome = path.join(shadowRoot, "shadow");
-          const sqliteEntries = [
+          const replaceableEntries = [
             "logs_2.sqlite",
             "logs_2.sqlite-wal",
             "logs_2.sqlite-shm",
             "state_5.sqlite-wal",
             "state_5.sqlite-journal",
+            "config.toml",
+            "version.json",
           ];
 
-          for (const entry of sqliteEntries) {
+          for (const entry of replaceableEntries) {
             yield* writeTextFile(path.join(sharedHome, entry), "shared");
             yield* writeTextFile(path.join(shadowHome, entry), "local");
           }
@@ -224,7 +226,7 @@ it.layer(NodeServices.layer)("CodexHomeLayout", (it) => {
 
           yield* materializeCodexShadowHome(layout);
 
-          for (const entry of sqliteEntries) {
+          for (const entry of replaceableEntries) {
             expect(yield* fileSystem.readLink(path.join(shadowHome, entry))).toBe(
               path.join(sharedHome, entry),
             );
@@ -377,8 +379,8 @@ it.layer(NodeServices.layer)("CodexHomeLayout", (it) => {
           const sharedHome = yield* makeTempDir("t3code-codex-shared-");
           const shadowRoot = yield* makeTempDir("t3code-codex-shadow-root-");
           const shadowHome = path.join(shadowRoot, "shadow");
-          yield* writeTextFile(path.join(sharedHome, "config.toml"), 'model = "gpt-5-codex"\n');
-          yield* writeTextFile(path.join(shadowHome, "config.toml"), 'model = "local"\n');
+          yield* writeTextFile(path.join(sharedHome, "instructions.md"), "shared instructions\n");
+          yield* writeTextFile(path.join(shadowHome, "instructions.md"), "local instructions\n");
 
           const layout = yield* resolveCodexHomeLayout(
             decodeCodexSettings({
@@ -393,12 +395,12 @@ it.layer(NodeServices.layer)("CodexHomeLayout", (it) => {
           expect(error).toMatchObject({
             sharedHomePath: sharedHome,
             effectiveHomePath: shadowHome,
-            entryName: "config.toml",
-            linkPath: path.join(shadowHome, "config.toml"),
-            targetPath: path.join(sharedHome, "config.toml"),
+            entryName: "instructions.md",
+            linkPath: path.join(shadowHome, "instructions.md"),
+            targetPath: path.join(sharedHome, "instructions.md"),
           });
           expect(error.message).toBe(
-            `Cannot create Codex shadow home entry 'config.toml' because '${path.join(shadowHome, "config.toml")}' already exists and is not a symlink.`,
+            `Cannot create Codex shadow home entry 'instructions.md' because '${path.join(shadowHome, "instructions.md")}' already exists and is not a symlink.`,
           );
         }),
     );

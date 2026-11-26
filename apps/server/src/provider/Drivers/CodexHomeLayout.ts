@@ -33,11 +33,15 @@ const KNOWN_SHARED_DIRECTORIES = [
 const PRIVATE_ENTRY_NAMES = new Set(["auth.json", "auth.lock", "models_cache.json"]);
 // Finder maintains metadata separately for each directory, including shadow homes.
 const SHADOW_LOCAL_ENTRY_NAMES = new Set(["log", "memories", "tmp", ".DS_Store"]);
-// Shadow homes may create local runtime locks or SQLite DB/WAL/SHM files first; replace them with shared links because they belong to shared state.
+// Shadow homes may create local runtime locks, SQLite DB/WAL/SHM files, or atomically rewritten
+// config/version files; replace them with shared links because they belong to shared state.
 const REPLACEABLE_SHARED_RUNTIME_ENTRIES = new Set([
   "mcp-oauth-locks",
   "thread-writer-locks",
+  "project-metadata-locks",
   ".sqlite-maintenance.lock",
+  "config.toml",
+  "version.json",
 ]);
 const SQLITE_RUNTIME_ENTRY_RE = /\.sqlite(?:-(?:wal|shm|journal))?$/i;
 
@@ -320,9 +324,9 @@ const ensureSymlink = Effect.fn("CodexHomeLayout.ensureSymlink")(function* (inpu
       Effect.as(true),
       Effect.catchTags({
         PlatformError: (cause) =>
-          SQLITE_RUNTIME_ENTRY_RE.test(input.entryName) && isBusyFileError(cause)
+          isBusyFileError(cause)
             ? Effect.logWarning(
-                "Codex shadow home SQLite runtime file is currently busy; it will be linked on a later setup.",
+                "Codex shadow home shared entry is currently busy; it will be linked on a later setup.",
                 { path: link, entryName: input.entryName },
               ).pipe(Effect.as(false))
             : new CodexShadowHomeFileSystemError({
