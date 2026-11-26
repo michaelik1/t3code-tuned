@@ -202,13 +202,16 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
   ## Based on upstream stable [v<upstream>](https://github.com/pingdotgg/t3code/releases/tag/v<upstream>)
 
   ### Included patches
+
   - **<Human-readable patch name>** — <short description>.
   - **<Human-readable patch name>** — <short description>: <what changed in this release>.
 
   ### Other changes
+
   - <CI, build targets, tooling, docs, or other `patch/dev-*` changes — omit section if none>
 
   ### Downloads
+
   Desktop builds for macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded WSL runtime), and Linux (`x64`, `arm64` AppImage & `.deb`), plus standalone CLI archives (`SHA256SUMS`). Builds are unsigned.
   ```
   - List only product patches (`patch/<name>`) under `### Included patches` with human-readable names (no raw branch names). Append `: <changes>` only when that patch changed in the current release.
@@ -267,6 +270,7 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Purpose:** Enables `<upstream>-patch.<major>.<minor>` release versioning (e.g. `0.1.11-patch.3.0`) and automatic updates from `michaelik1/t3code-tuned` GitHub Releases.
 - **Key changes:**
   - `packages/shared/src/semver.ts` & `semver.test.ts`: parses and orders `-patch.<major>.<minor>` versions above the base upstream version (`0.1.11 < 0.1.11-patch.1.0 < 0.1.11-patch.3.0 < 0.1.12-patch.1.0`).
+  - `packages/shared/src/cliRelease.ts` & `cliRelease.test.ts`, `apps/desktop/src/app/DesktopStartupRecovery.ts`, `scripts/install.{sh,ps1}`: point CLI archive downloads (used by SSH provisioning, `t3 update`, and pinned runtimes), startup recovery links, and install scripts to `michaelik1/t3code-tuned` instead of `pingdotgg/t3code`.
   - `apps/desktop/src/electron/ElectronUpdater.ts`: overrides `autoUpdater.isUpdateAvailable` using `compareSemverVersions` so Electron's updater accepts patched releases instead of treating `-patch.*` as a lower prerelease.
   - `scripts/build-desktop-artifact.ts` & `build-desktop-artifact.test.ts`: sets `channel: "latest"` on GitHub publish config for `-patch.*` builds so `electron-builder` emits `latest*.yml` manifests, and bounds `resources/server-compile-cache` separately (64 files) from the 80-file Windows payload limit.
 - **Rebase notes:** Watch `createBuildConfig` and `validateWindowsPackagedPayload` in `scripts/build-desktop-artifact.ts` if upstream changes updater channels or payload checks.

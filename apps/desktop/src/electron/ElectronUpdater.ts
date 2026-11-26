@@ -5,10 +5,13 @@ import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import * as Scope from "effect/Scope";
 
-import { AppImageUpdater, autoUpdater } from "electron-updater";
+import { AppImageUpdater, autoUpdater, type UpdateInfo } from "electron-updater";
 
 type AutoUpdater = typeof autoUpdater;
 type SpawnLog = (cmd: string, args?: Array<string>, ...rest: Array<unknown>) => Promise<boolean>;
+type UpdaterWithInternalAvailability = {
+  isUpdateAvailable: (updateInfo: UpdateInfo) => boolean;
+};
 
 // Electron holds the AppImage runtime's keepalive pipe and some files without O_CLOEXEC; a
 // relaunched AppImage inherits them, so old runtimes and FUSE mounts never exit. bash (AppRun
@@ -44,9 +47,7 @@ function isPatchedUpdateAvailable(
   return comparison > 0 ? true : allowDowngrade;
 }
 
-let defaultIsUpdateAvailable:
-  | ((updateInfo: Parameters<AutoUpdater["isUpdateAvailable"]>[0]) => boolean)
-  | undefined;
+let defaultIsUpdateAvailable: ((updateInfo: UpdateInfo) => boolean) | undefined;
 
 export type ElectronUpdaterFeedUrl = Parameters<AutoUpdater["setFeedURL"]>[0];
 
@@ -174,9 +175,10 @@ export const make = ElectronUpdater.of({
     },
   ),
   checkForUpdates: Effect.suspend(() => {
-    defaultIsUpdateAvailable ??= autoUpdater.isUpdateAvailable.bind(autoUpdater);
+    const internalUpdater = autoUpdater as unknown as UpdaterWithInternalAvailability;
+    defaultIsUpdateAvailable ??= internalUpdater.isUpdateAvailable.bind(autoUpdater);
     const fallback = defaultIsUpdateAvailable;
-    autoUpdater.isUpdateAvailable = (updateInfo) =>
+    internalUpdater.isUpdateAvailable = (updateInfo) =>
       isPatchedUpdateAvailable(
         autoUpdater.currentVersion.version,
         updateInfo.version,
