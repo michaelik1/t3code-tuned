@@ -202,13 +202,16 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
   ## Based on upstream stable [v<upstream>](https://github.com/pingdotgg/t3code/releases/tag/v<upstream>)
 
   ### Included patches
+
   - **<Human-readable patch name>** — <short description>.
   - **<Human-readable patch name>** — <short description>: <what changed in this release>.
 
   ### Other changes
+
   - <CI, build targets, tooling, docs, or other `patch/dev-*` changes — omit section if none>
 
   ### Downloads
+
   Desktop builds for macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded WSL runtime), and Linux (`x64`, `arm64` AppImage & `.deb`), plus standalone CLI archives (`SHA256SUMS`). Builds are unsigned.
   ```
   - List only product patches (`patch/<name>`) under `### Included patches` with human-readable names (no raw branch names). Append `: <changes>` only when that patch changed in the current release.
@@ -261,3 +264,15 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Linux/WSL single-executable (`build-exe`) bundler check:** `apps/server/src/mcpServers/McpServerTools.ts` dynamically imports `@modelcontextprotocol/sdk` via `loadSdkModule()` so `cli.ts build-exe` does not fail with `ServerCliExecutableImportError` on bare `zod/v3`/`zod/v4` imports.
 - **MCP Tool List Context Budget:** Combining `t3_usage_limits` (`patch/usage-limits`) with `t3_tools_*` and `t3_skills_*` (`patch/tools-and-skills`) increases `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json`. Always verify with `AgentContextBudget.test.ts` on `release`.
 - **Knip unused-entry checks:** Because `patch/dev-custom-ci` removes unused upstream workflows, keep `.github/scripts/mirror-play-apk.cjs`, `resolve-nightly-release.ts`, and `apps/web/scripts/verify-built-boot.ts` listed in `knip.jsonc`.
+
+### Branch Notes: `patch/antigravity-usage-limits`
+
+- **Purpose:** Restores per-profile Antigravity quota limits (`Usage → Limits` and `t3_usage_limits`) after upstream `#43026` removed direct Google internal API calls, using the official `agy --print /usage --output-format json` CLI command with isolated per-profile temp homes (no direct internal API calls, zero model turns).
+- **Files touched:**
+  - `apps/server/src/provider/antigravityUsageLimits.ts` (new CLI-based usage probe + parser + env isolator)
+  - `apps/server/src/provider/antigravityUsageLimits.test.ts` (unit tests for parser, env isolation, token staging/cleanup, and caching)
+  - `apps/server/src/provider/AntigravityProvider.ts` (non-blocking background `FiberHandle` `probeUsage` / `clearUsage` / `onSignedIn`)
+  - `apps/server/src/provider/Drivers/AntigravityDriver.ts` (wires `makeAntigravityUsageProbe` and `provider.onSignedIn`)
+  - `packages/shared/src/usageLimits.ts` (restores Antigravity window sorting, `exhaustedUsageWindow`, and `antigravityWindowLimitsModel`)
+  - `apps/web/src/components/chat/ThreadDetailsUsage.logic.ts` (restores `antigravityWindowLimitsModel` hub filtering)
+- **Rebase/integration notes:** Watch `AntigravityProvider.ts`, `AntigravityDriver.ts`, and `packages/shared/src/usageLimits.ts` on upstream bumps; if upstream adds native ACP `/usage` support later, this patch can be retired.
