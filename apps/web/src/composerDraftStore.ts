@@ -29,8 +29,10 @@ import {
   type ScopedProjectRef,
   type ScopedThreadRef,
   ThreadId,
+  ThreadToolPresets,
   SnapShotSource,
 } from "@t3tools/contracts";
+import { threadToolPresetsEqual } from "@t3tools/shared/agentTools";
 import {
   parseScopedProjectKey,
   parseScopedThreadKey,
@@ -413,6 +415,7 @@ const PersistedDraftThreadState = Schema.Struct({
   createdAt: Schema.String,
   runtimeMode: RuntimeMode,
   interactionMode: ProviderInteractionMode,
+  toolPresets: Schema.optionalKey(ThreadToolPresets),
   branch: Schema.NullOr(Schema.String),
   worktreePath: Schema.NullOr(Schema.String),
   envMode: DraftThreadEnvModeSchema,
@@ -432,6 +435,7 @@ const PersistedDraftThreadState = Schema.Struct({
   ),
 });
 type PersistedDraftThreadState = typeof PersistedDraftThreadState.Type;
+const isThreadToolPresets = Schema.is(ThreadToolPresets);
 
 const PersistedComposerDraftStoreState = Schema.Struct({
   draftsByThreadKey: Schema.Record(Schema.String, PersistedComposerThreadDraftState),
@@ -514,6 +518,8 @@ export interface DraftSessionState {
   createdAt: string;
   runtimeMode: RuntimeMode;
   interactionMode: ProviderInteractionMode;
+  /** Presets the thread will start with turned on or off. */
+  toolPresets?: ThreadToolPresets;
   branch: string | null;
   worktreePath: string | null;
   envMode: DraftThreadEnvMode;
@@ -633,6 +639,7 @@ interface ComposerDraftStoreState {
       workspaceExplicit?: boolean;
       runtimeMode?: RuntimeMode;
       interactionMode?: ProviderInteractionMode;
+      toolPresets?: ThreadToolPresets;
       environmentSelection?: "auto" | "manual";
       loadBalancedEnvironmentId?: EnvironmentId | null;
       checkoutPullRequest?: DraftCheckoutPullRequest | null;
@@ -1801,6 +1808,7 @@ function createDraftThreadState(
     ...(!projectChanged && existingThread?.worktreeRepositories !== undefined
       ? { worktreeRepositories: existingThread.worktreeRepositories }
       : {}),
+    ...(existingThread?.toolPresets ? { toolPresets: existingThread.toolPresets } : {}),
     promotedTo: null,
   };
 }
@@ -1864,6 +1872,7 @@ function draftThreadsEqual(left: DraftThreadState | undefined, right: DraftThrea
     left.workspaceExplicit === right.workspaceExplicit &&
     checkoutPullRequestsEqual(left.checkoutPullRequest, right.checkoutPullRequest) &&
     worktreeRepositoriesEqual(left.worktreeRepositories, right.worktreeRepositories) &&
+    threadToolPresetsEqual(left.toolPresets, right.toolPresets) &&
     scopedThreadRefsEqual(left.promotedTo, right.promotedTo)
   );
 }
@@ -2027,6 +2036,9 @@ function normalizePersistedDraftThreads(
         envMode: normalizeDraftThreadEnvMode(candidateDraftThread.envMode, normalizedWorktreePath),
         startFromOrigin,
         ...(candidateDraftThread.workspaceExplicit === true ? { workspaceExplicit: true } : {}),
+        ...(isThreadToolPresets(candidateDraftThread.toolPresets)
+          ? { toolPresets: candidateDraftThread.toolPresets }
+          : {}),
         ...(candidateDraftThread.environmentSelection === "manual" ||
         candidateDraftThread.environmentSelection === "auto"
           ? { environmentSelection: candidateDraftThread.environmentSelection }
@@ -2817,6 +2829,7 @@ function toHydratedDraftThreadState(
     envMode: persistedDraftThread.envMode,
     startFromOrigin: persistedDraftThread.startFromOrigin,
     ...(persistedDraftThread.workspaceExplicit ? { workspaceExplicit: true } : {}),
+    ...(persistedDraftThread.toolPresets ? { toolPresets: persistedDraftThread.toolPresets } : {}),
     ...(persistedDraftThread.environmentSelection
       ? { environmentSelection: persistedDraftThread.environmentSelection }
       : {}),
@@ -3086,6 +3099,7 @@ const composerDraftStore = create<ComposerDraftStoreState>()(
               options.startFromOrigin === undefined
                 ? existing.startFromOrigin
                 : options.startFromOrigin;
+            const nextToolPresets = options.toolPresets ?? existing.toolPresets;
             const environmentSelection =
               options.environmentSelection ??
               (options.branch != null || options.worktreePath != null
@@ -3130,6 +3144,7 @@ const composerDraftStore = create<ComposerDraftStoreState>()(
                 : {}),
               ...(checkoutPullRequest ? { checkoutPullRequest } : {}),
               ...(worktreeRepositories ? { worktreeRepositories } : {}),
+              ...(nextToolPresets ? { toolPresets: nextToolPresets } : {}),
               promotedTo: existing.promotedTo ?? null,
             };
             const isUnchanged =
@@ -3154,6 +3169,7 @@ const composerDraftStore = create<ComposerDraftStoreState>()(
                 nextDraftThread.worktreeRepositories,
                 existing.worktreeRepositories,
               ) &&
+              threadToolPresetsEqual(nextDraftThread.toolPresets, existing.toolPresets) &&
               scopedThreadRefsEqual(nextDraftThread.promotedTo, existing.promotedTo);
             if (isUnchanged) {
               return state;
