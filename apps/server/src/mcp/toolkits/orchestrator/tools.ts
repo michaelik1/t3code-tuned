@@ -1,4 +1,5 @@
 import {
+  ServerProviderUsageWindow,
   OrchestratorMcpCapabilitiesInput,
   OrchestratorMcpCapabilitiesResult,
   OrchestrationV2StopWorkflowInput,
@@ -43,6 +44,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import * as ThreadManagementService from "../../../orchestration-v2/ThreadManagementService.ts";
+import * as ProviderRegistry from "../../../provider/ProviderRegistry.ts";
 import * as PeerForwarding from "../../../peer/PeerForwarding.ts";
 import * as PeerLinkRequests from "../../../peer/PeerLinkRequests.ts";
 import * as PeerLinks from "../../../peer/PeerLinks.ts";
@@ -71,6 +73,30 @@ const threadMetadataDependencies = [
   ThreadManagementService.ThreadManagementService,
   ThreadMetadataMcpService.ThreadMetadataMcpService,
 ];
+
+const UsageLimitsTool = Tool.make("t3_usage_limits", {
+  description: "Refresh and read the latest T3 subscription quota snapshots for all provider instances and usage hubs on this environment. usedPercent is consumed, not remaining.",
+  success: Schema.Struct({
+    accounts: Schema.Array(Schema.Struct({
+      id: Schema.String,
+      provider: Schema.String,
+      label: Schema.String,
+      source: Schema.String,
+      enabled: Schema.Boolean,
+      checkedAt: Schema.NullOr(Schema.String),
+      unavailable: Schema.NullOr(Schema.String),
+      windows: Schema.Array(ServerProviderUsageWindow),
+    })),
+    sourceErrors: Schema.Array(Schema.Struct({ source: Schema.String, message: Schema.String })),
+  }),
+  failure: OrchestratorMcpFailure,
+  failureMode: "return",
+  dependencies: [McpInvocationContext.McpInvocationContext, ProviderRegistry.ProviderRegistry],
+})
+  .annotate(Tool.Title, "Get usage limits")
+  .annotate(Tool.Readonly, true)
+  .annotate(Tool.Destructive, false)
+  .annotate(Tool.Idempotent, true);
 
 const OrchestratorCapabilitiesTool = Tool.make("orchestrator_capabilities", {
   description:
@@ -364,6 +390,7 @@ const EnvironmentUnlinkTool = Tool.make("t3_environment_unlink", {
 
 export const OrchestratorToolkit = Toolkit.make(
   OrchestratorCapabilitiesTool,
+  UsageLimitsTool,
   DelegateTaskTool,
   TaskStatusTool,
   TaskCancelTool,
