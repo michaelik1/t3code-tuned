@@ -265,12 +265,15 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **MCP Tool List Context Budget:** Combining `t3_usage_limits` (`patch/usage-limits`) with `t3_tools_*` and `t3_skills_*` (`patch/tools-and-skills`) increases `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json`. Always verify with `AgentContextBudget.test.ts` on `release`.
 - **Knip unused-entry checks:** Because `patch/dev-custom-ci` removes unused upstream workflows, keep `.github/scripts/mirror-play-apk.cjs`, `resolve-nightly-release.ts`, and `apps/web/scripts/verify-built-boot.ts` listed in `knip.jsonc`.
 
-### Branch Notes: `patch/dev-custom-ci`
+### Branch Notes: `release`
 
-- **Purpose:** Configures fork release metadata (`patch-release.json`) and desktop-only GitHub Actions release builds for `michaelik1/t3code-tuned` using version format `v<upstream>-patch.<major>.<minor>`.
-- **Key changes:**
-  - `patch-release.json` & `RELEASE_NOTES.md`: store release version (`upstream_tag` + `patch_version`) and release notes template (`{{UPSTREAM_TAG}}` placeholder).
-  - `.github/workflows/release.yml`: `workflow_dispatch` pipeline that runs focused patch tests, builds the JS bundle once, invokes `.github/workflows/release-desktop.yml` across all 6 desktop targets on standard GitHub-hosted runners (macOS arm64/x64, Linux x64/arm64, Windows x64/arm64 + embedded WSL runtimes), merges multi-arch updater manifests (`latest.yml`, `latest-mac.yml`), and publishes `Patched T3 Code v<upstream>-patch.<major>.<minor>`.
-  - `.github/workflows/release-desktop.yml`: makes Clerk/relay inputs optional (`default: ""`) so fork builds succeed without upstream secrets.
-  - Removes unused upstream workflows (mobile, AUR, relay, PR triage, nightly schedule) and adds the 3 orphaned script entries to `knip.jsonc`.
-- **Rebase notes:** When updating to a new upstream release, bump `upstream_tag` in `patch-release.json` (keep `patch_version` monotonic) and re-check `.github/workflows/release-desktop.yml` for any newly added required inputs.
+- **Purpose:** Integration branch combining all `patch/*` branches on top of `main` (`v0.1.13`) for publishing `v0.1.13-patch.1.2` desktop releases.
+- **Merged patch branches:**
+  1. `patch/custom-updater` — `<upstream>-patch.<major>.<minor>` semver, Electron auto-updater, and `michaelik1/t3code-tuned` CLI/SSH release URLs & install scripts.
+  2. `patch/usage-limits` — `t3_usage_limits` MCP tool & native UI presentation.
+  3. `patch/voice-recording-limit` — 1-hour local voice dictation (cloud providers stay at 5 minutes) with active limit shown in Voice settings.
+  4. `patch/disable-telemetry` — permanently disables PostHog (`ingest.t3.codes`) analytics, owner ID harvesting, and Axiom relay tracing.
+  5. `patch/codex-shadow-home` — replaces stale local `*.sqlite*`, `config.toml`, `version.json`, and `project-metadata-locks` entries in Codex shadow homes with shared symlinks.
+  6. `patch/tools-and-skills` — Skills, MCP servers, and Composer Tool Presets (PR `#17691` port + i18n/bundler fixes).
+  7. `patch/dev-custom-ci` — `patch-release.json`, `RELEASE_NOTES.md`, and multi-platform desktop-only GitHub Actions release workflow.
+- **Release-only integration adjustment:** `apps/server/src/provider/agentContextBudget.json` (`mcpToolListJsonBytes: 64501`) reflects the combined MCP toolset from `patch/usage-limits` + `patch/tools-and-skills`.
