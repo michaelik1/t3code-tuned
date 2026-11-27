@@ -12,7 +12,8 @@ import type { MFunctionType } from "gt-i18n/types";
 
 const isVoiceTranscriptionError = Schema.is(VoiceTranscriptionError);
 
-export const VOICE_RECORDING_LIMIT_SECONDS = 5 * 60;
+export const VOICE_RECORDING_LIMIT_SECONDS = 60 * 60;
+export const CLOUD_VOICE_RECORDING_LIMIT_SECONDS = 5 * 60;
 
 export const MICROPHONE_PERMISSION_ERROR = msg(
   "Microphone access is required for voice input. Allow access in your browser or system settings and try again.",
@@ -102,6 +103,8 @@ export type VoiceInputControllerDependencies = {
   readonly deleteRecording: (uri: string) => void;
   /** Keep a recording whose transcription failed so the next start retries it without recording again. */
   readonly retryFailedRecording?: boolean;
+  /** Maximum recording length in seconds; defaults to VOICE_RECORDING_LIMIT_SECONDS (local limit). */
+  readonly recordingLimitSeconds?: number | undefined;
   /**
    * Optional cleanup of the transcript before insertion. Returning null skips it for this
    * recording; a failure falls back to the raw transcript.
@@ -441,7 +444,9 @@ export class VoiceInputController {
           },
         );
       }
-      this.dependencies.recorder.record({ forDuration: VOICE_RECORDING_LIMIT_SECONDS });
+      this.dependencies.recorder.record({
+        forDuration: this.dependencies.recordingLimitSeconds ?? VOICE_RECORDING_LIMIT_SECONDS,
+      });
       this.setState({ phase: "recording", error: null, errorAction: null });
     } catch (error) {
       if (this.isCurrent(operationToken))

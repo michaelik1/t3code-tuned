@@ -1532,7 +1532,17 @@ export function VoiceSettingsPanel() {
               ? gt("{label} can’t transcribe audio locally. Choose another destination.", {
                   label: chosenEnvironment.label,
                 })
-              : gt("Where your speech is turned into text.")
+              : destination.cloudProvider
+                ? gt(
+                    "Where your speech is turned into text. Cloud transcription supports recordings up to 5 minutes.",
+                  )
+                : destination.environmentId
+                  ? gt(
+                      "Where your speech is turned into text. Local transcription supports recordings up to 1 hour.",
+                    )
+                  : gt(
+                      "Where your speech is turned into text. Local models support up to 1 hour; cloud providers support up to 5 minutes.",
+                    )
           }
           control={
             <div className="flex w-full min-w-0 items-center gap-1.5 @min-[32rem]/settings-row:w-auto">

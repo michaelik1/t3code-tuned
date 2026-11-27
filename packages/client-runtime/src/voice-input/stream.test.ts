@@ -71,7 +71,7 @@ it("drains ordered PCM before finishing and replaces tentative hypotheses", asyn
 it("rejects recordings beyond the duration limit", async () => {
   const { socket, stream, onError } = connect();
   stream.feed(new Float32Array(SPEECH_STREAM_MAX_QUEUED_BYTES / 4 + 1));
-  await expect(stream.finish()).rejects.toThrow("limited to five minutes");
+  await expect(stream.finish()).rejects.toThrow("limited to one hour");
   expect(onError).toHaveBeenCalledOnce();
   expect(socket.sent).toHaveLength(0);
   expect(socket.closed).toBe(true);
@@ -102,6 +102,12 @@ it("fails on disconnect and times out stalled inference", async () => {
     await vi.advanceTimersByTimeAsync(120_000);
     await expect(second.stream.finish()).rejects.toThrow("stopped responding");
     expect(second.socket.closed).toBe(true);
+    const third = connect();
+    const final = third.stream.finish();
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(third.socket.closed).toBe(false);
+    third.socket.receive({ type: "finished", text: "complete" });
+    await expect(final).resolves.toBe("complete");
   } finally {
     vi.useRealTimers();
   }

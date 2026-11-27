@@ -1,5 +1,7 @@
 import {
+  CLOUD_VOICE_RECORDING_LIMIT_SECONDS,
   postProcessEnvironmentTranscript,
+  VOICE_RECORDING_LIMIT_SECONDS,
   VoiceInputController,
   voiceInputBlocksSubmission,
   type VoiceDraftSnapshot,
@@ -221,6 +223,9 @@ export class VoiceInputSession {
     this.controller = new VoiceInputController({
       resolve: m,
       retryFailedRecording: true,
+      recordingLimitSeconds: key.cloudProvider
+        ? CLOUD_VOICE_RECORDING_LIMIT_SECONDS
+        : VOICE_RECORDING_LIMIT_SECONDS,
       recorder: platform.recorder,
       getTranscriber: () => platform.transcriber,
       requestPermission: async () => ({ granted: true, canAskAgain: true }),

@@ -482,7 +482,7 @@ describe("VoiceInputController", () => {
     },
   );
 
-  it("uses the native five-minute cap and commits one final transcript", async () => {
+  it("uses the native one-hour cap and commits one final transcript", async () => {
     const harness = createHarness();
     await harness.controller.start();
     expect(harness.recorder.record).toHaveBeenCalledWith({

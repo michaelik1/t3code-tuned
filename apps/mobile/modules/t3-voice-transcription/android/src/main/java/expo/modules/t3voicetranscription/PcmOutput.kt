@@ -86,7 +86,7 @@ internal fun livePcmResponses(
   responses: () -> Flow<SpeechRecognizerResponse>
 ): Flow<SpeechRecognizerResponse> = flow {
   try {
-    withTimeout(330000) {
+    withTimeout(3630000) {
       responses().collect { emit(it) }
       requireCompleteAudio(capture.inputExhausted) {
         "Speech recognition ended before receiving the complete recording."

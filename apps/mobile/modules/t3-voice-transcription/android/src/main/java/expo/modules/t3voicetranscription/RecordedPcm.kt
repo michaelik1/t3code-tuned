@@ -23,7 +23,7 @@ internal suspend fun <T> withRecordedPcm(
   val pcm = File.createTempFile("dictation-", ".pcm", context.cacheDir)
   try {
     try {
-      withTimeout(30000) { decodeRecording(context, Uri.parse(uri), pcm) }
+      withTimeout(180000) { decodeRecording(context, Uri.parse(uri), pcm) }
     } catch (_: TimeoutCancellationException) {
       throw VoiceTranscriptionException(
         "incomplete-audio",

@@ -112,8 +112,8 @@ class T3VoiceTranscriptionModule : Module() {
       withContext(Dispatchers.IO) {
         require(android.net.Uri.parse(uri).scheme == "file") { "Expected a local recording." }
         withRecordedPcm(context, uri) { pcm ->
-          requireCompleteAudio(pcm.length() <= 16000L * 2 * 301) {
-            "Recording exceeds five minutes."
+          requireCompleteAudio(pcm.length() <= 16000L * 2 * 3601) {
+            "Recording exceeds one hour."
           }
           pcm.readBytes()
         }
@@ -134,7 +134,7 @@ class T3VoiceTranscriptionModule : Module() {
         withContext(Dispatchers.IO) { recorder.prepare() }
       }
       Function("record") { recorder: LiveVoiceRecorder, options: Map<String, Double> ->
-        recorder.record(options["forDuration"] ?: 300.0)
+        recorder.record(options["forDuration"] ?: 3600.0)
       }
       AsyncFunction("stop") Coroutine { recorder: LiveVoiceRecorder -> recorder.stop() }
       Function("getStatus") { recorder: LiveVoiceRecorder -> recorder.status() }

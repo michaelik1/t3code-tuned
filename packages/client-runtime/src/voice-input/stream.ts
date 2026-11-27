@@ -60,7 +60,7 @@ export function openSpeechStream(input: {
     clearTimeout(timer);
     timer = setTimeout(
       () => fail(translatableError(msg("Live transcription stopped responding."))),
-      120_000,
+      finishSent ? 60 * 60_000 : 120_000,
     );
   };
   const abort = () => fail(translatableError(msg("Voice transcription was cancelled.")), false);
@@ -137,7 +137,7 @@ export function openSpeechStream(input: {
       if (closed || finishing) return;
       const bytes = new Uint8Array(pcm.buffer, pcm.byteOffset, pcm.byteLength);
       if (queuedBytes + inFlightBytes + bytes.byteLength > SPEECH_STREAM_MAX_QUEUED_BYTES) {
-        fail(translatableError(msg("Voice recordings are limited to five minutes.")));
+        fail(translatableError(msg("Voice recordings are limited to one hour.")));
         return;
       }
       let offset = 0;
