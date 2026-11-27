@@ -11,8 +11,8 @@
 
 ### Changes
 
-- Fixed Codex shadow home startup issues with atomically rewritten `config.toml`, `version.json`, and `project-metadata-locks` files on Windows.
-- Fixed `RELEASE_NOTES.md` upstream tag placeholder so Markdown formatting does not mangle the link text.
+- Rebased all patches onto upstream stable `v0.1.13` (includes all changes from `v0.1.12` and `v0.1.13`).
+- Updated telemetry opt-out patch for upstream's new `DO_NOT_TRACK`, `allowedFor`, and `AnalyticsService.record` changes.
 
 ### Downloads
 
