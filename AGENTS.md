@@ -196,26 +196,26 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Version format:** `v<upstream>-patch.<major>.<minor>` (e.g. `v0.1.11-patch.3.0`), configured in `patch-release.json` on `patch/dev-custom-ci` (`upstream_tag` + `patch_version`).
   - Keep `patch_version` monotonic across feature generations (do not reset it to `1.0` on an upstream bump).
 - **Release title:** `Patched T3 Code v<upstream>-patch.<major>.<minor>` (e.g. `Patched T3 Code v0.1.11-patch.3.0`).
-- **Release notes file:** `RELEASE_NOTES.md` on `patch/dev-custom-ci` (uses `__UPSTREAM_TAG__` placeholder; `release.yml` reads it automatically so the workflow never needs manual edits for release copy).
+- **Release notes file:** `RELEASE_NOTES.md` on `patch/dev-custom-ci` (uses `{{UPSTREAM_TAG}}` placeholder; `release.yml` reads it automatically so the workflow never needs manual edits for release copy).
 - **Release notes template (English):**
   ```markdown
-  ## Based on upstream stable [v<upstream>](https://github.com/pingdotgg/t3code/releases/tag/v<upstream>)
+  ## Based on upstream stable [{{UPSTREAM_TAG}}](https://github.com/pingdotgg/t3code/releases/tag/{{UPSTREAM_TAG}})
 
   ### Included patches
 
-  - **<Human-readable patch name>** — <short description>.
-  - **<Human-readable patch name>** — <short description>: <what changed in this release>.
+  - **<Human-readable patch name>** — <short, user-friendly description>.
 
-  ### Other changes
+  ### Changes
 
-  - <CI, build targets, tooling, docs, or other `patch/dev-*` changes — omit section if none>
+  - <Concrete fixes, patch updates, newly added patches, or CI/release changes in this release — omit section if none>
 
   ### Downloads
 
-  Desktop builds for macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded WSL runtime), and Linux (`x64`, `arm64` AppImage & `.deb`), plus standalone CLI archives (`SHA256SUMS`). Builds are unsigned.
+  Builds are unsigned.
   ```
-  - List only product patches (`patch/<name>`) under `### Included patches` with human-readable names (no raw branch names). Append `: <changes>` only when that patch changed in the current release.
-  - List non-product changes (`patch/dev-*`, CI, build/packaging, docs) under `### Other changes`; omit the section if there are none.
+  - `### Included patches` is a concise, user-friendly overview ("booklet") of the product patches (`patch/<name>`) shipped in the fork — use human-readable names (no raw branch names) and avoid low-level implementation details. Keep this list stable across releases; only add/remove/edit entries when the set of shipped patches or a patch's user-facing scope changes.
+  - `### Changes` lists what specifically changed in the current release (bug fixes, patch updates, newly added patches, and CI/release changes) with slightly more detail. When adding a new patch, add its short summary to `### Included patches` and mention the addition in `### Changes`. Omit `### Changes` if there are no release-specific changes.
+  - Keep `### Downloads` minimal with only `Builds are unsigned.` (GitHub Releases already lists the build assets).
 - **Platforms built:** Desktop only — macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded Linux WSL runtimes), and Linux (`x64`, `arm64` AppImage/deb + CLI archives). Mobile (iOS/Android), npm CLI publish, AUR, and relay deploys are not built or published in this fork.
 
 ### 4. Updating to a New Upstream Stable Release (e.g. `v0.1.12`)
@@ -265,12 +265,12 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **MCP Tool List Context Budget:** Combining `t3_usage_limits` (`patch/usage-limits`) with `t3_tools_*` and `t3_skills_*` (`patch/tools-and-skills`) increases `mcpToolListJsonBytes` in `apps/server/src/provider/agentContextBudget.json`. Always verify with `AgentContextBudget.test.ts` on `release`.
 - **Knip unused-entry checks:** Because `patch/dev-custom-ci` removes unused upstream workflows, keep `.github/scripts/mirror-play-apk.cjs`, `resolve-nightly-release.ts`, and `apps/web/scripts/verify-built-boot.ts` listed in `knip.jsonc`.
 
-### Branch Notes: `patch/custom-updater`
+### Branch Notes: `patch/dev-custom-ci`
 
-- **Purpose:** Enables `<upstream>-patch.<major>.<minor>` release versioning (e.g. `0.1.11-patch.3.0`) and automatic updates from `michaelik1/t3code-tuned` GitHub Releases.
+- **Purpose:** Configures fork release metadata (`patch-release.json`) and desktop-only GitHub Actions release builds for `michaelik1/t3code-tuned` using version format `v<upstream>-patch.<major>.<minor>`.
 - **Key changes:**
-  - `packages/shared/src/semver.ts` & `semver.test.ts`: parses and orders `-patch.<major>.<minor>` versions above the base upstream version (`0.1.11 < 0.1.11-patch.1.0 < 0.1.11-patch.3.0 < 0.1.12-patch.1.0`).
-  - `packages/shared/src/cliRelease.ts` & `cliRelease.test.ts`, `apps/desktop/src/app/DesktopStartupRecovery.ts`, `scripts/install.{sh,ps1}`: point CLI archive downloads (used by SSH provisioning, `t3 update`, and pinned runtimes), startup recovery links, and install scripts to `michaelik1/t3code-tuned` instead of `pingdotgg/t3code`.
-  - `apps/desktop/src/electron/ElectronUpdater.ts`: overrides `autoUpdater.isUpdateAvailable` using `compareSemverVersions` so Electron's updater accepts patched releases instead of treating `-patch.*` as a lower prerelease.
-  - `scripts/build-desktop-artifact.ts` & `build-desktop-artifact.test.ts`: sets `channel: "latest"` on GitHub publish config for `-patch.*` builds so `electron-builder` emits `latest*.yml` manifests, and bounds `resources/server-compile-cache` separately (64 files) from the 80-file Windows payload limit.
-- **Rebase notes:** Watch `createBuildConfig` and `validateWindowsPackagedPayload` in `scripts/build-desktop-artifact.ts` if upstream changes updater channels or payload checks.
+  - `patch-release.json` & `RELEASE_NOTES.md`: store release version (`upstream_tag` + `patch_version`) and release notes template (`{{UPSTREAM_TAG}}` placeholder).
+  - `.github/workflows/release.yml`: `workflow_dispatch` pipeline that runs focused patch tests, builds the JS bundle once, invokes `.github/workflows/release-desktop.yml` across all 6 desktop targets on standard GitHub-hosted runners (macOS arm64/x64, Linux x64/arm64, Windows x64/arm64 + embedded WSL runtimes), merges multi-arch updater manifests (`latest.yml`, `latest-mac.yml`), and publishes `Patched T3 Code v<upstream>-patch.<major>.<minor>`.
+  - `.github/workflows/release-desktop.yml`: makes Clerk/relay inputs optional (`default: ""`) so fork builds succeed without upstream secrets.
+  - Removes unused upstream workflows (mobile, AUR, relay, PR triage, nightly schedule) and adds the 3 orphaned script entries to `knip.jsonc`.
+- **Rebase notes:** When updating to a new upstream release, bump `upstream_tag` in `patch-release.json` (keep `patch_version` monotonic) and re-check `.github/workflows/release-desktop.yml` for any newly added required inputs.

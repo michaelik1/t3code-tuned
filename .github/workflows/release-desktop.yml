@@ -105,16 +105,20 @@ on:
         default: true
         type: boolean
       clerk_publishable_key:
-        required: true
+        required: false
+        default: ""
         type: string
       clerk_jwt_template:
-        required: true
+        required: false
+        default: ""
         type: string
       clerk_cli_oauth_client_id:
-        required: true
+        required: false
+        default: ""
         type: string
       relay_url:
-        required: true
+        required: false
+        default: ""
         type: string
 
 # electron-builder leaves the default arch (x64) out of the unpacked app's
