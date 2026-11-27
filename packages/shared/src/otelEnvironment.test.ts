@@ -400,22 +400,13 @@ describe("isCiEnvironment", () => {
 });
 
 describe("isRelayTracingEnabled", () => {
-  it("turns off for DO_NOT_TRACK, even when T3 telemetry is on", () => {
+  it("always returns false because external relay telemetry is permanently disabled", () => {
+    assert.isFalse(OtelEnvironment.isRelayTracingEnabled({}));
+    assert.isFalse(OtelEnvironment.isRelayTracingEnabled({ T3CODE_TELEMETRY_ENABLED: "true" }));
     assert.isFalse(OtelEnvironment.isRelayTracingEnabled({ DO_NOT_TRACK: "1" }));
-    assert.isFalse(
-      OtelEnvironment.isRelayTracingEnabled({
-        DO_NOT_TRACK: "true",
-        T3CODE_TELEMETRY_ENABLED: "1",
-      }),
-    );
-    assert.isTrue(OtelEnvironment.isRelayTracingEnabled({ DO_NOT_TRACK: "0" }));
-    assert.isTrue(OtelEnvironment.isRelayTracingEnabled({ DO_NOT_TRACK: "" }));
-  });
-
-  it("defaults on and respects the T3CODE SDK override of the standard kill switch", () => {
-    assert.isTrue(OtelEnvironment.isRelayTracingEnabled({}));
+    assert.isFalse(OtelEnvironment.isRelayTracingEnabled({ DO_NOT_TRACK: "0" }));
     assert.isFalse(OtelEnvironment.isRelayTracingEnabled({ OTEL_SDK_DISABLED: "true" }));
-    assert.isTrue(
+    assert.isFalse(
       OtelEnvironment.isRelayTracingEnabled({
         OTEL_SDK_DISABLED: "true",
         T3CODE_OTEL_SDK_DISABLED: "false",
@@ -427,16 +418,9 @@ describe("isRelayTracingEnabled", () => {
         T3CODE_OTEL_SDK_DISABLED: "true",
       }),
     );
-  });
-
-  it("is off on a CI runner unless T3CODE_TELEMETRY_ENABLED turns it on", () => {
     assert.isFalse(OtelEnvironment.isRelayTracingEnabled({ CI: "true" }));
-    assert.isFalse(OtelEnvironment.isRelayTracingEnabled({ JENKINS_URL: "https://ci.example" }));
-    assert.isTrue(
-      OtelEnvironment.isRelayTracingEnabled({ CI: "true", T3CODE_TELEMETRY_ENABLED: "true" }),
-    );
     assert.isFalse(
-      OtelEnvironment.isRelayTracingEnabled({ CI: "true", T3CODE_TELEMETRY_ENABLED: "false" }),
+      OtelEnvironment.isRelayTracingEnabled({ CI: "true", T3CODE_TELEMETRY_ENABLED: "true" }),
     );
   });
 
