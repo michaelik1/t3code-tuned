@@ -208,10 +208,14 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
   ### Changes
 
   - <Concrete fixes, patch updates, newly added patches, or CI/release changes in this release — omit section if none>
+
+  ### Downloads
+
+  Builds are unsigned.
   ```
   - `### Included patches` is a concise, user-friendly overview ("booklet") of the product patches (`patch/<name>`) shipped in the fork — use human-readable names (no raw branch names) and avoid low-level implementation details. Keep this list stable across releases; only add/remove/edit entries when the set of shipped patches or a patch's user-facing scope changes.
   - `### Changes` lists what specifically changed in the current release (bug fixes, patch updates, newly added patches, and CI/release changes) with slightly more detail. When adding a new patch, add its short summary to `### Included patches` and mention the addition in `### Changes`. Omit `### Changes` if there are no release-specific changes.
-  - Do not include a `### Downloads` section (GitHub Releases already lists the build assets).
+  - Keep `### Downloads` minimal with only `Builds are unsigned.` (GitHub Releases already lists the build assets).
 - **Platforms built:** Desktop only — macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded Linux WSL runtimes), and Linux (`x64`, `arm64` AppImage/deb + CLI archives). Mobile (iOS/Android), npm CLI publish, AUR, and relay deploys are not built or published in this fork.
 
 ### 4. Updating to a New Upstream Stable Release (e.g. `v0.1.12`)

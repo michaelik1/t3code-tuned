@@ -13,3 +13,7 @@
 
 - Fixed Codex shadow home startup issues with atomically rewritten `config.toml`, `version.json`, and `project-metadata-locks` files on Windows.
 - Fixed `RELEASE_NOTES.md` upstream tag placeholder so Markdown formatting does not mangle the link text.
+
+### Downloads
+
+Builds are unsigned.
