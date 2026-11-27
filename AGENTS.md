@@ -199,23 +199,19 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Release notes file:** `RELEASE_NOTES.md` on `patch/dev-custom-ci` (uses `{{UPSTREAM_TAG}}` placeholder; `release.yml` reads it automatically so the workflow never needs manual edits for release copy).
 - **Release notes template (English):**
   ```markdown
-  ## Based on upstream stable [v<upstream>](https://github.com/pingdotgg/t3code/releases/tag/v<upstream>)
+  ## Based on upstream stable [{{UPSTREAM_TAG}}](https://github.com/pingdotgg/t3code/releases/tag/{{UPSTREAM_TAG}})
 
   ### Included patches
 
-  - **<Human-readable patch name>** — <short description>.
-  - **<Human-readable patch name>** — <short description>: <what changed in this release>.
+  - **<Human-readable patch name>** — <short, user-friendly description>.
 
-  ### Other changes
+  ### Changes
 
-  - <CI, build targets, tooling, docs, or other `patch/dev-*` changes — omit section if none>
-
-  ### Downloads
-
-  Desktop builds for macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded WSL runtime), and Linux (`x64`, `arm64` AppImage & `.deb`), plus standalone CLI archives (`SHA256SUMS`). Builds are unsigned.
+  - <Concrete fixes, patch updates, newly added patches, or CI/release changes in this release — omit section if none>
   ```
-  - List only product patches (`patch/<name>`) under `### Included patches` with human-readable names (no raw branch names). Append `: <changes>` only when that patch changed in the current release.
-  - List non-product changes (`patch/dev-*`, CI, build/packaging, docs) under `### Other changes`; omit the section if there are none.
+  - `### Included patches` is a concise, user-friendly overview ("booklet") of the product patches (`patch/<name>`) shipped in the fork — use human-readable names (no raw branch names) and avoid low-level implementation details. Keep this list stable across releases; only add/remove/edit entries when the set of shipped patches or a patch's user-facing scope changes.
+  - `### Changes` lists what specifically changed in the current release (bug fixes, patch updates, newly added patches, and CI/release changes) with slightly more detail. When adding a new patch, add its short summary to `### Included patches` and mention the addition in `### Changes`. Omit `### Changes` if there are no release-specific changes.
+  - Do not include a `### Downloads` section (GitHub Releases already lists the build assets).
 - **Platforms built:** Desktop only — macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded Linux WSL runtimes), and Linux (`x64`, `arm64` AppImage/deb + CLI archives). Mobile (iOS/Android), npm CLI publish, AUR, and relay deploys are not built or published in this fork.
 
 ### 4. Updating to a New Upstream Stable Release (e.g. `v0.1.12`)
@@ -269,7 +265,7 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 
 - **Purpose:** Configures fork release metadata (`patch-release.json`) and desktop-only GitHub Actions release builds for `michaelik1/t3code-tuned` using version format `v<upstream>-patch.<major>.<minor>`.
 - **Key changes:**
-  - `patch-release.json` & `RELEASE_NOTES.md`: store release version (`upstream_tag` + `patch_version`) and release notes template (`__UPSTREAM_TAG__` placeholder).
+  - `patch-release.json` & `RELEASE_NOTES.md`: store release version (`upstream_tag` + `patch_version`) and release notes template (`{{UPSTREAM_TAG}}` placeholder).
   - `.github/workflows/release.yml`: `workflow_dispatch` pipeline that runs focused patch tests, builds the JS bundle once, invokes `.github/workflows/release-desktop.yml` across all 6 desktop targets on standard GitHub-hosted runners (macOS arm64/x64, Linux x64/arm64, Windows x64/arm64 + embedded WSL runtimes), merges multi-arch updater manifests (`latest.yml`, `latest-mac.yml`), and publishes `Patched T3 Code v<upstream>-patch.<major>.<minor>`.
   - `.github/workflows/release-desktop.yml`: makes Clerk/relay inputs optional (`default: ""`) so fork builds succeed without upstream secrets.
   - Removes unused upstream workflows (mobile, AUR, relay, PR triage, nightly schedule) and adds the 3 orphaned script entries to `knip.jsonc`.
