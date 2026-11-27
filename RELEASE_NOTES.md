@@ -11,8 +11,7 @@
 
 ### Changes
 
-- Rebased all patches onto upstream stable `v0.1.13` (includes all changes from `v0.1.12` and `v0.1.13`).
-- Updated telemetry opt-out patch for upstream's new `DO_NOT_TRACK`, `allowedFor`, and `AnalyticsService.record` changes.
+- Enabled T3 Connect public client configuration (from `.env.example`) so **Use T3 Code in another app (MCP)**, remote tunnels, and mobile pairing work out of the box while keeping external analytics and relay tracing permanently disabled.
 
 ### Downloads
 
