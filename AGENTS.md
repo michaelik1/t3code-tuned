@@ -195,7 +195,7 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 
 - **Version format:** `v<upstream>-patch.<major>.<minor>` (e.g. `v0.1.11-patch.3.0`), configured in `patch-release.json` on `patch/dev-custom-ci` (`upstream_tag` + `patch_version`).
   - Keep `patch_version` monotonic across feature generations (do not reset it to `1.0` on an upstream bump).
-- **Release title:** `Patched T3 Code v<upstream>-patch.<major>.<minor>` (e.g. `Patched T3 Code v0.1.11-patch.3.0`).
+- **Release title:** Same as the release tag — `v<upstream>-patch.<major>.<minor>` (e.g. `v0.1.13-patch.2.0`), with no `Patched T3 Code` prefix.
 - **Release notes file:** `RELEASE_NOTES.md` on `patch/dev-custom-ci` (uses `{{UPSTREAM_TAG}}` placeholder; `release.yml` reads it automatically so the workflow never needs manual edits for release copy).
 - **Release notes template (English):**
   ```markdown
@@ -270,7 +270,7 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 - **Purpose:** Configures fork release metadata (`patch-release.json`) and desktop-only GitHub Actions release builds for `michaelik1/t3code-tuned` using version format `v<upstream>-patch.<major>.<minor>`.
 - **Key changes:**
   - `patch-release.json` & `RELEASE_NOTES.md`: store release version (`upstream_tag` + `patch_version`) and release notes template (`{{UPSTREAM_TAG}}` placeholder).
-  - `.github/workflows/release.yml`: `workflow_dispatch` pipeline that runs focused patch tests, builds the JS bundle once, invokes `.github/workflows/release-desktop.yml` across all 6 desktop targets on standard GitHub-hosted runners (macOS arm64/x64, Linux x64/arm64, Windows x64/arm64 + embedded WSL runtimes), merges multi-arch updater manifests (`latest.yml`, `latest-mac.yml`), and publishes `Patched T3 Code v<upstream>-patch.<major>.<minor>`.
+  - `.github/workflows/release.yml`: `workflow_dispatch` pipeline that runs focused patch tests, builds the JS bundle once, invokes `.github/workflows/release-desktop.yml` across all 6 desktop targets on standard GitHub-hosted runners (macOS arm64/x64, Linux x64/arm64, Windows x64/arm64 + embedded WSL runtimes), merges multi-arch updater manifests (`latest.yml`, `latest-mac.yml`), and publishes `v<upstream>-patch.<major>.<minor>`.
   - `.github/workflows/release-desktop.yml`: makes Clerk/relay inputs optional (`default: ""`) so fork builds succeed without upstream secrets.
   - Removes unused upstream workflows (mobile, AUR, relay, PR triage, nightly schedule) and adds the 3 orphaned script entries to `knip.jsonc`.
 - **Rebase notes:** When updating to a new upstream release, bump `upstream_tag` in `patch-release.json` (keep `patch_version` monotonic) and re-check `.github/workflows/release-desktop.yml` for any newly added required inputs.
