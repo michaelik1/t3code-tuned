@@ -8,10 +8,11 @@
 - **Telemetry Disabled** — permanently disables PostHog (`ingest.t3.codes`) analytics, owner/provider ID harvesting, and T3 Connect Axiom relay tracing.
 - **Codex Shadow Home Fix** — prevents startup failures and config desync on Windows when using multiple Codex accounts.
 - **Tools & Skills** — Settings → Tools (MCP servers, Skill Library) and Composer Tool Presets (port of upstream PR #17691).
+- **Antigravity Usage Limits** — restores per-profile Antigravity quota limits (`Usage → Limits` and `t3_usage_limits`) using the official `agy --print /usage --output-format json` CLI in isolated per-profile temp homes.
 
 ### Changes
 
-- Enabled T3 Connect public client configuration (from `.env.example`) so **Use T3 Code in another app (MCP)**, remote tunnels, and mobile pairing work out of the box while keeping external analytics and relay tracing permanently disabled.
+- Added **Antigravity Usage Limits** (`patch/antigravity-usage-limits`): restores 5-hour and weekly Gemini and Claude/GPT quota windows per Google account without calling Google's internal APIs or spending model turns.
 
 ### Downloads
 
