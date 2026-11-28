@@ -202,31 +202,50 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
   ## Based on upstream stable [{{UPSTREAM_TAG}}](https://github.com/pingdotgg/t3code/releases/tag/{{UPSTREAM_TAG}})
 
   ### Included patches
-
-  - **<Human-readable patch name>** — <short, user-friendly description>.
-
-  ### Changes
-
-  - <Concrete fixes, patch updates, newly added patches, or CI/release changes in this release — omit section if none>
-
-  ### Downloads
-
-  Builds are unsigned.
   ```
-  - `### Included patches` is a concise, user-friendly overview ("booklet") of the product patches (`patch/<name>`) shipped in the fork — use human-readable names (no raw branch names) and avoid low-level implementation details. Keep this list stable across releases; only add/remove/edit entries when the set of shipped patches or a patch's user-facing scope changes.
-  - `### Changes` lists what specifically changed in the current release (bug fixes, patch updates, newly added patches, and CI/release changes) with slightly more detail. When adding a new patch, add its short summary to `### Included patches` and mention the addition in `### Changes`. Omit `### Changes` if there are no release-specific changes.
-  - Keep `### Downloads` minimal with only `Builds are unsigned.` (GitHub Releases already lists the build assets).
+
+<<<<<<< HEAD
+
+- **<Human-readable patch name>** — <short, user-friendly description>.
+
+### Changes
+
+- <Concrete fixes, patch updates, newly added patches, or CI/release changes in this release — omit section if none>
+
+### Downloads
+
+Builds are unsigned.
+=======
+
+- **<Human-readable patch name>** — <short description>.
+- **<Human-readable patch name>** — <short description>: <what changed in this release>.
+
+### Other changes
+
+- <CI, build targets, tooling, docs, or other `patch/dev-*` changes — omit section if none>
+
+### Downloads
+
+Desktop builds for macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded WSL runtime), and Linux (`x64`, `arm64` AppImage & `.deb`), plus standalone CLI archives (`SHA256SUMS`). Builds are unsigned.
+
+> > > > > > > patch/antigravity-usage-limits
+
+````
+- `### Included patches` is a concise, user-friendly overview ("booklet") of the product patches (`patch/<name>`) shipped in the fork — use human-readable names (no raw branch names) and avoid low-level implementation details. Keep this list stable across releases; only add/remove/edit entries when the set of shipped patches or a patch's user-facing scope changes.
+- `### Changes` lists what specifically changed in the current release (bug fixes, patch updates, newly added patches, and CI/release changes) with slightly more detail. When adding a new patch, add its short summary to `### Included patches` and mention the addition in `### Changes`. Omit `### Changes` if there are no release-specific changes.
+- Keep `### Downloads` minimal with only `Builds are unsigned.` (GitHub Releases already lists the build assets).
 - **Platforms built:** Desktop only — macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded Linux WSL runtimes), and Linux (`x64`, `arm64` AppImage/deb + CLI archives). Mobile (iOS/Android), npm CLI publish, AUR, and relay deploys are not built or published in this fork.
 
 ### 4. Updating to a New Upstream Stable Release (e.g. `v0.1.12`)
 
 1. **Fetch upstream tag and rebase `main`:**
-   ```powershell
-   git fetch upstream --tags
-   git checkout main
-   git rebase v0.1.12
-   git push origin main --force-with-lease
-   ```
+ ```powershell
+ git fetch upstream --tags
+ git checkout main
+ git rebase v0.1.12
+ git push origin main --force-with-lease
+````
+
 2. **Rebase each `patch/*` branch onto the new `main`:**
    ```powershell
    foreach ($b in @("patch/custom-updater", "patch/usage-limits", "patch/voice-recording-limit", "patch/disable-telemetry", "patch/codex-shadow-home", "patch/tools-and-skills", "patch/dev-custom-ci")) {
@@ -267,7 +286,7 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 
 ### Branch Notes: `release`
 
-- **Purpose:** Integration branch combining all `patch/*` branches on top of `main` (`v0.1.13`) for publishing `v0.1.13-patch.1.2` desktop releases.
+- **Purpose:** Integration branch combining all `patch/*` branches on top of `main` (`v0.1.13`) for publishing patched desktop releases.
 - **Merged patch branches:**
   1. `patch/custom-updater` — `<upstream>-patch.<major>.<minor>` semver, Electron auto-updater, and `michaelik1/t3code-tuned` CLI/SSH release URLs & install scripts.
   2. `patch/usage-limits` — `t3_usage_limits` MCP tool & native UI presentation.
@@ -275,5 +294,6 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
   4. `patch/disable-telemetry` — permanently disables PostHog (`ingest.t3.codes`) analytics, owner ID harvesting, and Axiom relay tracing.
   5. `patch/codex-shadow-home` — replaces stale local `*.sqlite*`, `config.toml`, `version.json`, and `project-metadata-locks` entries in Codex shadow homes with shared symlinks.
   6. `patch/tools-and-skills` — Skills, MCP servers, and Composer Tool Presets (PR `#17691` port + i18n/bundler fixes).
-  7. `patch/dev-custom-ci` — `patch-release.json`, `RELEASE_NOTES.md`, and multi-platform desktop-only GitHub Actions release workflow.
+  7. `patch/antigravity-usage-limits` — restores per-profile Antigravity quota limits via official `agy --print /usage --output-format json` in isolated per-profile temp homes.
+  8. `patch/dev-custom-ci` — `patch-release.json`, `RELEASE_NOTES.md`, and multi-platform desktop-only GitHub Actions release workflow.
 - **Release-only integration adjustment:** `apps/server/src/provider/agentContextBudget.json` (`mcpToolListJsonBytes: 64501`) reflects the combined MCP toolset from `patch/usage-limits` + `patch/tools-and-skills`.
