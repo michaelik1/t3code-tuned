@@ -182,7 +182,8 @@ This repository is a personal fork of `pingdotgg/t3code` (migrated from `michael
   4. `patch/disable-telemetry` — permanently disables all external/phone-home telemetry (PostHog / `ingest.t3.codes` analytics, owner/provider ID harvesting, and T3 Connect Axiom OTLP relay tracing).
   5. `patch/codex-shadow-home` — replaces stale local `*.sqlite` / `-wal` / `-shm` / `-journal` runtime files in Codex shadow homes with shared symlinks (and defers gracefully on Windows file locks) so multi-account Codex instances stop failing on startup.
   6. `patch/tools-and-skills` — adapted port of upstream PR `#17691` (global & project MCP servers, Skill Library, Composer Tool Presets, `t3_tools_*`/`t3_skills_*` MCP tools, UI localization, and bundler/Effect adaptations).
-  7. `patch/dev-custom-ci` — `patch-release.json`, `knip.jsonc` adjustments, and desktop-only GitHub Actions release pipeline (`.github/workflows/release.yml` + `release-desktop.yml`) targeting macOS (`arm64`, `x64`), Windows (`x64`, `arm64` + WSL runtime), and Linux (`x64`, `arm64`). Mobile builds are intentionally excluded.
+  7. `patch/antigravity-usage-limits` — restores per-profile Antigravity quota limits (`Usage → Limits` and `t3_usage_limits`) via the official `agy --print /usage --output-format json` CLI in isolated per-profile temp homes.
+  8. `patch/dev-custom-ci` — `patch-release.json`, `knip.jsonc` adjustments, and desktop-only GitHub Actions release pipeline (`.github/workflows/release.yml` + `release-desktop.yml`) targeting macOS (`arm64`, `x64`), Windows (`x64`, `arm64` + WSL runtime), and Linux (`x64`, `arm64`). Mobile builds are intentionally excluded.
 - **Integration / release branch (`release`):**
   - Merge of all `patch/*` branches plus the combined `apps/server/src/provider/agentContextBudget.json` update.
   - Release builds are triggered from `release` via GitHub Actions `workflow_dispatch`.
@@ -195,42 +196,24 @@ Every `patch/*` branch appends a concise `### Branch Notes: patch/<name>` subsec
 
 - **Version format:** `v<upstream>-patch.<major>.<minor>` (e.g. `v0.1.11-patch.3.0`), configured in `patch-release.json` on `patch/dev-custom-ci` (`upstream_tag` + `patch_version`).
   - Keep `patch_version` monotonic across feature generations (do not reset it to `1.0` on an upstream bump).
-- **Release title:** `Patched T3 Code v<upstream>-patch.<major>.<minor>` (e.g. `Patched T3 Code v0.1.11-patch.3.0`).
+- **Release title:** Same as the release tag — `v<upstream>-patch.<major>.<minor>` (e.g. `v0.1.13-patch.2.0`), with no `Patched T3 Code` prefix.
 - **Release notes file:** `RELEASE_NOTES.md` on `patch/dev-custom-ci` (uses `{{UPSTREAM_TAG}}` placeholder; `release.yml` reads it automatically so the workflow never needs manual edits for release copy).
 - **Release notes template (English):**
   ```markdown
   ## Based on upstream stable [{{UPSTREAM_TAG}}](https://github.com/pingdotgg/t3code/releases/tag/{{UPSTREAM_TAG}})
 
   ### Included patches
+
+  - **<Human-readable patch name>** — <short, user-friendly description>.
+
+  ### Changes
+
+  - <Concrete fixes, patch updates, newly added patches, or CI/release changes in this release — omit section if none>
+
+  ### Downloads
+
+  Builds are unsigned.
   ```
-
-<<<<<<< HEAD
-
-- **<Human-readable patch name>** — <short, user-friendly description>.
-
-### Changes
-
-- <Concrete fixes, patch updates, newly added patches, or CI/release changes in this release — omit section if none>
-
-### Downloads
-
-Builds are unsigned.
-=======
-
-- **<Human-readable patch name>** — <short description>.
-- **<Human-readable patch name>** — <short description>: <what changed in this release>.
-
-### Other changes
-
-- <CI, build targets, tooling, docs, or other `patch/dev-*` changes — omit section if none>
-
-### Downloads
-
-Desktop builds for macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded WSL runtime), and Linux (`x64`, `arm64` AppImage & `.deb`), plus standalone CLI archives (`SHA256SUMS`). Builds are unsigned.
-
-> > > > > > > patch/antigravity-usage-limits
-
-````
 - `### Included patches` is a concise, user-friendly overview ("booklet") of the product patches (`patch/<name>`) shipped in the fork — use human-readable names (no raw branch names) and avoid low-level implementation details. Keep this list stable across releases; only add/remove/edit entries when the set of shipped patches or a patch's user-facing scope changes.
 - `### Changes` lists what specifically changed in the current release (bug fixes, patch updates, newly added patches, and CI/release changes) with slightly more detail. When adding a new patch, add its short summary to `### Included patches` and mention the addition in `### Changes`. Omit `### Changes` if there are no release-specific changes.
 - Keep `### Downloads` minimal with only `Builds are unsigned.` (GitHub Releases already lists the build assets).
@@ -239,12 +222,13 @@ Desktop builds for macOS (`arm64`, `x64`), Windows (`x64`, `arm64` with embedded
 ### 4. Updating to a New Upstream Stable Release (e.g. `v0.1.12`)
 
 1. **Fetch upstream tag and rebase `main`:**
- ```powershell
- git fetch upstream --tags
- git checkout main
- git rebase v0.1.12
- git push origin main --force-with-lease
-````
+
+```powershell
+git fetch upstream --tags
+git checkout main
+git rebase v0.1.12
+git push origin main --force-with-lease
+```
 
 2. **Rebase each `patch/*` branch onto the new `main`:**
    ```powershell
